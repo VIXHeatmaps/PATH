@@ -63,7 +63,6 @@ module.exports = async function handler(req, res) {
       .split(",")
       .map(s => s.trim())
       .filter(Boolean);
-
     if (!allow.includes(user.id)) {
       return res
         .status(403)
@@ -71,10 +70,10 @@ module.exports = async function handler(req, res) {
     }
 
     // 4) Set HttpOnly session cookie (valid ~8 hours)
-    const secret = process.env.SESSION_SECRET;
+    const secret = process.env.SESSION_SECRET || "dev-secret-change-me";
     const now = Math.floor(Date.now() / 1000);
     const payload = { sub: user.id, name: user.username, iat: now, exp: now + 8 * 3600 };
-    const token = signPayload(payload, secret || "dev-secret-change-me");
+    const token = signPayload(payload, secret);
 
     res.setHeader("Set-Cookie", [
       `session=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${8 * 3600}`
@@ -87,5 +86,7 @@ module.exports = async function handler(req, res) {
        <p>User: <strong>${user.username || "(no name)"} (${user.id})</strong></p>
        <p>Allowlist check passed. Session cookie set.</p>`
     );
-  } 
-::contentReference[oaicite:0]{index=0}
+  } catch (err) {
+    res.status(500).send("Callback error: " + (err && err.message ? err.message : String(err)));
+  }
+};
