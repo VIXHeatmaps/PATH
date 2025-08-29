@@ -1,73 +1,123 @@
 <!doctype html>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Discord Auth + R2 Upload Demo</title>
-<style>
-  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 16px; }
-  .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin: 16px 0; }
-  button,input { font-size: 16px; }
-  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  #status { color: #444; margin-top: 8px; }
-  a.btn { display:inline-block; padding:8px 12px; border:1px solid #ddd; border-radius:10px; text-decoration:none; }
-</style>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Discord Login + R2 Upload</title>
+  <style>
+    :root { --border:#e5e7eb; --muted:#6b7280; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 16px; }
+    h1 { font-size: 40px; margin: 0 0 16px; }
+    .card { border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin: 16px 0; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    button, input, a.btn { font-size: 16px; }
+    a.btn, button { padding: 8px 14px; border: 1px solid var(--border); border-radius: 10px; text-decoration: none; cursor: pointer; background: #fff; }
+    a.btn:hover, button:hover { background: #fafafa; }
+    code { background:#f6f7f8; padding:2px 6px; border-radius:6px; }
+    #status { color: var(--muted); margin-top: 8px; }
+    #result { margin-top: 8px; }
+    .ok { color: #16a34a; }
+    .warn { color: #b45309; }
+    .err { color: #dc2626; }
+  </style>
+</head>
+<body>
+  <h1>Discord Login + R2 Upload</h1>
 
-<h1>Discord Login + R2 Upload</h1>
-
-<div class="card">
-  <h3>1) Login</h3>
-  <p>If you get “Unauthorized” in step 2, click this and log in:</p>
-  <a class="btn" href="/api/auth/discord/start">Login with Discord</a>
-</div>
-
-<div class="card">
-  <h3>2) Upload a file</h3>
-  <div class="row">
-    <input type="file" id="fileInput" />
-    <button id="uploadBtn">Upload</button>
+  <div class="card">
+    <h3>1) Login</h3>
+    <p>If status says <em>Not logged in</em>, click this:</p>
+    <a class="btn" href="/api/auth/discord/start">Login with Discord</a>
+    <div id="status">Checking login status…</div>
   </div>
-  <div id="status"></div>
-  <div id="result" style="margin-top:8px;"></div>
-</div>
 
-<script>
-const fileInput = document.getElementById('fileInput');
-const uploadBtn = document.getElementById('uploadBtn');
-const statusEl = document.getElementById('status');
-const resultEl = document.getElementById('result');
+  <div class="card">
+    <h3>2) Upload a file</h3>
+    <div class="row">
+      <input type="file" id="fileInput" />
+      <button id="uploadBtn">Upload</button>
+    </div>
+    <div id="result"></div>
+  </div>
 
-async function getUploadUrl(filename, contentType) {
-  const u = new URL('/api/upload-url', window.location.origin);
-  u.searchParams.set('filename', filename);
-  u.searchParams.set('contentType', contentType || 'application/octet-stream');
-  const resp = await fetch(u.toString(), { credentials: 'include' });
-  if (!resp.ok) throw new Error(await resp.text());
-  return resp.json();
-}
+  <script>
+    const statusEl = document.getElementById('status');
+    const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const resultEl = document.getElementById('result');
 
-uploadBtn.onclick = async () => {
-  resultEl.textContent = '';
-  const f = fileInput.files && fileInput.files[0];
-  if (!f) {
-    statusEl.textContent = 'Pick a file first.';
-    return;
-  }
-  try {
-    statusEl.textContent = 'Requesting presigned URL...';
-    const { url, key, user } = await getUploadUrl(f.name, f.type || 'application/octet-stream');
+    // Check if a session cookie is present by calling /api/upload-url with no filename:
+    // - 401 => not logged in
+    // - 400 => logged in (we passed the auth gate, then hit "filename required")
+    async function checkLogin() {
+      try {
+        const resp = await fetch('/api/upload-url', { credentials: 'include' });
+        if (resp.status === 400) {
+          statusEl.textContent = 'Logged in ✔';
+          statusEl.className = 'ok';
+          return true;
+        } else if (resp.status === 401) {
+          statusEl.textContent = 'Not logged in';
+          statusEl.className = 'warn';
+          return false;
+        } else {
+          statusEl.textContent = 'Status unknown (' + resp.status + ')';
+          statusEl.className = 'warn';
+          return false;
+        }
+      } catch (e) {
+        statusEl.textContent = 'Status check failed';
+        statusEl.className = 'err';
+        return false;
+      }
+    }
 
-    statusEl.textContent = 'Uploading to R2...';
-    const put = await fetch(url, {
-      method: 'PUT',
-      headers: { 'Content-Type': f.type || 'application/octet-stream' },
-      body: f
-    });
-    if (!put.ok) throw new Error('Upload failed: ' + put.status);
+    async function getUploadUrl(filename, contentType) {
+      const u = new URL('/api/upload-url', window.location.origin);
+      u.searchParams.set('filename', filename);
+      u.searchParams.set('contentType', contentType || 'application/octet-stream');
+      const resp = await fetch(u.toString(), { credentials: 'include' });
+      if (!resp.ok) throw new Error(await resp.text());
+      return resp.json();
+    }
 
-    statusEl.textContent = 'Done ✅';
-    resultEl.innerHTML = `<div>Uploaded as <code>${key}</code>${user ? ` (user ${user})` : ''}</div>`;
-  } catch (e) {
-    statusEl.textContent = 'Error';
-    resultEl.textContent = String(e);
-  }
-};
-</script>
+    uploadBtn.onclick = async () => {
+      resultEl.textContent = '';
+      const f = fileInput.files && fileInput.files[0];
+      if (!f) {
+        resultEl.textContent = 'Pick a file first.';
+        resultEl.className = 'warn';
+        return;
+      }
+      // Ensure logged in
+      const ok = await checkLogin();
+      if (!ok) {
+        resultEl.innerHTML = 'Not logged in. Click <a href="/api/auth/discord/start">Login with Discord</a> first.';
+        resultEl.className = 'warn';
+        return;
+      }
+      try {
+        resultEl.textContent = 'Requesting upload URL…';
+        const { url, key, user } = await getUploadUrl(f.name, f.type || 'application/octet-stream');
+
+        resultEl.textContent = 'Uploading…';
+        const put = await fetch(url, {
+          method: 'PUT',
+          headers: { 'Content-Type': f.type || 'application/octet-stream' },
+          body: f
+        });
+        if (!put.ok) throw new Error('Upload failed: ' + put.status);
+
+        resultEl.innerHTML = `Done ✅ Uploaded as <code>${key}</code>${user ? ` (user ${user})` : ''}.`;
+        resultEl.className = 'ok';
+      } catch (err) {
+        resultEl.textContent = String(err);
+        resultEl.className = 'err';
+      }
+    };
+
+    // Kick off initial status check
+    checkLogin();
+  </script>
+</body>
+</html>
