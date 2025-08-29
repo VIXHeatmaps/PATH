@@ -1,4 +1,73 @@
 <!doctype html>
-<title>Discord + Upload Demo</title>
-<h1>It works 🎉</h1>
-<p>Next: Discord login + uploads.</p>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Discord Auth + R2 Upload Demo</title>
+<style>
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 16px; }
+  .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin: 16px 0; }
+  button,input { font-size: 16px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  #status { color: #444; margin-top: 8px; }
+  a.btn { display:inline-block; padding:8px 12px; border:1px solid #ddd; border-radius:10px; text-decoration:none; }
+</style>
+
+<h1>Discord Login + R2 Upload</h1>
+
+<div class="card">
+  <h3>1) Login</h3>
+  <p>If you get “Unauthorized” in step 2, click this and log in:</p>
+  <a class="btn" href="/api/auth/discord/start">Login with Discord</a>
+</div>
+
+<div class="card">
+  <h3>2) Upload a file</h3>
+  <div class="row">
+    <input type="file" id="fileInput" />
+    <button id="uploadBtn">Upload</button>
+  </div>
+  <div id="status"></div>
+  <div id="result" style="margin-top:8px;"></div>
+</div>
+
+<script>
+const fileInput = document.getElementById('fileInput');
+const uploadBtn = document.getElementById('uploadBtn');
+const statusEl = document.getElementById('status');
+const resultEl = document.getElementById('result');
+
+async function getUploadUrl(filename, contentType) {
+  const u = new URL('/api/upload-url', window.location.origin);
+  u.searchParams.set('filename', filename);
+  u.searchParams.set('contentType', contentType || 'application/octet-stream');
+  const resp = await fetch(u.toString(), { credentials: 'include' });
+  if (!resp.ok) throw new Error(await resp.text());
+  return resp.json();
+}
+
+uploadBtn.onclick = async () => {
+  resultEl.textContent = '';
+  const f = fileInput.files && fileInput.files[0];
+  if (!f) {
+    statusEl.textContent = 'Pick a file first.';
+    return;
+  }
+  try {
+    statusEl.textContent = 'Requesting presigned URL...';
+    const { url, key, user } = await getUploadUrl(f.name, f.type || 'application/octet-stream');
+
+    statusEl.textContent = 'Uploading to R2...';
+    const put = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': f.type || 'application/octet-stream' },
+      body: f
+    });
+    if (!put.ok) throw new Error('Upload failed: ' + put.status);
+
+    statusEl.textContent = 'Done ✅';
+    resultEl.innerHTML = `<div>Uploaded as <code>${key}</code>${user ? ` (user ${user})` : ''}</div>`;
+  } catch (e) {
+    statusEl.textContent = 'Error';
+    resultEl.textContent = String(e);
+  }
+};
+</script>
