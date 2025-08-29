@@ -1,0 +1,8 @@
+{
+  "name": "path-upload-demo",
+  "private": true,
+  "version": "1.0.0",
+  "dependencies": {
+    "aws4": "^1.12.0"
+  }
+}
