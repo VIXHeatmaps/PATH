@@ -1,4 +1,6 @@
-// CommonJS + sets an HttpOnly "session" cookie after allowlist passes
+// CommonJS + sets an HttpOnly "session" cookie after allowlist passes,
+// then REDIRECTS back to "/" so you see index.html.
+
 const crypto = require("crypto");
 
 function b64u(str) {
@@ -58,15 +60,15 @@ module.exports = async function handler(req, res) {
     }
     const user = await userResp.json(); // { id, username, ... }
 
-    // 3) ALLOWLIST check
+    // 3) Allowlist check
     const allow = (process.env.ALLOWLIST || "")
       .split(",")
       .map(s => s.trim())
       .filter(Boolean);
     if (!allow.includes(user.id)) {
-      return res
-        .status(403)
-        .send(`Access denied. Your Discord ID (${user.id}) is not on the allowlist.`);
+      return res.status(403).send(
+        `Access denied. Your Discord ID (${user.id}) is not on the allowlist.`
+      );
     }
 
     // 4) Set HttpOnly session cookie (valid ~8 hours)
@@ -74,19 +76,13 @@ module.exports = async function handler(req, res) {
     const now = Math.floor(Date.now() / 1000);
     const payload = { sub: user.id, name: user.username, iat: now, exp: now + 8 * 3600 };
     const token = signPayload(payload, secret);
-
     res.setHeader("Set-Cookie", [
       `session=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${8 * 3600}`
     ]);
 
-    // 5) Simple success page
-    res.setHeader("Content-Type", "text/html; charset=utf-8");
-    res.status(200).send(
-      `<h1>Logged in ✔</h1>
-       <p>User: <strong>${user.username || "(no name)"} (${user.id})</strong></p>
-       <p>Allowlist check passed. Session cookie set.</p>`
-    );
+    // 5) Redirect back to the UI
+    res.writeHead(302, { Location: "/" }).end();
   } catch (err) {
-    res.status(500).send("Callback error: " + (err && err.message ? err.message : String(err)));
+    res.status(500).send("Callback error: " + (err?.message || String(err)));
   }
 };
