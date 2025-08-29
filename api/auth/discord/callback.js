@@ -35,14 +35,10 @@ export default async function handler(req, res) {
     }
     const user = await userResp.json(); // { id, username, ... }
 
-    // 3) Show a simple success page
-    res.setHeader("Content-Type", "text/html; charset=utf-8");
-    res.status(200).send(
-      `<h1>Logged in ✔</h1>
-       <p>User: <strong>${user.username || "(no name)"} (${user.id})</strong></p>
-       <p>Discord OAuth is working.</p>`
-    );
-  } catch (err) {
-    res.status(500).send("Callback error: " + (err?.message || String(err)));
-  }
-}
+    // 3) ALLOWLIST check
+    const allow = (process.env.ALLOWLIST || "")
+      .split(",")
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    if (!allow.i
