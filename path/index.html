@@ -2,21 +2,17 @@
 <html lang="en">
 <head>
   <!-- ===================== BEGIN BLOCK A: LOGIN GATE (Discord) ===================== -->
-  <!-- Hides the page, pings a protected endpoint; if 401 → send to Discord login. -->
   <style id="login-gate-style">html{visibility:hidden}</style>
   <script>
   (async () => {
     try {
       const resp = await fetch('/api/upload-url', { credentials: 'include' });
       if (resp.status === 401) {
-        // Not logged in → go to Discord login.
-        // (Callback currently sends you to "/", we can switch it to "/path/" next.)
+        // Not logged in → send to Discord login; your callback is already set to return to /path/
         location.href = '/api/auth/discord/start';
         return;
       }
-    } catch (e) {
-      // If the check fails for network reasons, still reveal the page so you can debug.
-    }
+    } catch (e) {}
     document.documentElement.style.visibility = 'visible';
   })();
   </script>
@@ -25,7 +21,7 @@
   <!-- ===================== BEGIN BLOCK B: BASE PAGE METADATA ======================= -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PATH v0.25 - Parallel Adaptive Text Helper</title>
+  <title>PATH – Parallel Adaptive Text Helper</title>
   <!-- ===================== END BLOCK B: BASE PAGE METADATA ========================= -->
 
   <!-- ===================== BEGIN BLOCK C: STYLES =================================== -->
@@ -39,79 +35,61 @@
     .subtitle{color:#999;font-size:.85em;font-weight:300}
     .version{color:#bbb;font-size:.75em;font-family:monospace}
     .top-actions{display:flex;align-items:center;gap:10px}
-    .link-btn{background:none;border:none;color:#bbb;font-size:.75em;cursor:pointer;padding:2px 6px;border-radius:6px}
-    .link-btn:hover{color:#888;background:#f3f3f3}
+
+    .link-btn{background:none;border:none;color:#666;font-size:.85em;cursor:pointer;padding:6px 10px;border-radius:8px}
+    .link-btn:hover{background:#f0f0f0}
     .link-btn.configured{color:#2e7d32}
+
     textarea::placeholder{color:#9aa0a6}
     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-    .vars-bar{margin-top:8px;font-size:11px;color:#777;display:flex;align-items:center;gap:6px;cursor:pointer}
-    .vars-bar .chev{transition:transform .2s;display:inline-block}
-    .vars-bar.open .chev{transform:rotate(90deg)}
-    .output-settings.collapsed{display:none}
-    .input-section{background:#f8f9fa;padding:20px;border-radius:12px;margin-bottom:25px}
-    .input-group{margin-bottom:20px}
+
+    .input-section{background:#f8f9fa;padding:20px;border-radius:12px;margin-bottom:20px}
+    .input-group{margin-bottom:15px}
     label{display:block;margin-bottom:8px;color:#555;font-weight:600}
     textarea{width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px;resize:vertical;min-height:120px;transition:border-color .3s}
     textarea:focus{outline:none;border-color:#667eea}
-    .generate-section{display:flex;gap:15px;align-items:center}
+
+    .controls-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:10px}
+    .controls-row .sp2{grid-column:span 2}
+    .controls-row .sp3{grid-column:span 3}
+    .controls-row .sp6{grid-column:1/-1}
+    select,input[type="text"],input[type="number"]{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px}
+
+    .files-panel{background:#fff;border:1px dashed #ddd;border-radius:12px;padding:12px;margin:10px 0}
+    .file-row{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border:1px solid #eee;border-radius:8px;margin-top:6px;background:#fafafa}
+    .file-row small{color:#666}
+    .badge{display:inline-block;padding:2px 6px;border-radius:6px;background:#eef;color:#445;margin-left:8px;font-size:12px}
+
+    .gen-row{display:flex;gap:15px;align-items:center}
     .generate-btn{padding:12px 40px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border:none;border-radius:8px;font-size:18px;font-weight:600;cursor:pointer;transition:transform .2s,box-shadow .2s}
     .generate-btn:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(102,126,234,.4)}
     .generate-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
-    .api-key-btn{padding:12px 20px;background:#f0f0f0;color:#333;border:none;border-radius:8px;font-size:16px;cursor:pointer;transition:background .2s}
-    .api-key-btn:hover{background:#e0e0e0}
-    .api-key-btn.configured{background:#e8f5e9;color:#2e7d32}
-    .debug-toggle{padding:8px 16px;background:#fff;border:1px solid #ddd;border-radius:6px;font-size:14px;cursor:pointer;transition:all .2s}
-    .debug-toggle:hover{background:#f5f5f5}
-    .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background-color:rgba(0,0,0,.5);animation:fadeIn .3s}
+
+    .debug-toggle{padding:8px 16px;background:#fff;border:1px solid #ddd;border-radius:6px;font-size:14px;cursor:pointer}
+    .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background-color:rgba(0,0,0,.5)}
     .modal.active{display:flex;align-items:center;justify-content:center}
-    .modal-content{background:#fff;padding:30px;border-radius:12px;width:90%;max-width:500px;animation:slideUp .3s}
-    .modal-header{margin-bottom:20px}
-    .modal-title{font-size:1.5em;color:#333;margin-bottom:10px}
-    .modal-close{float:right;font-size:28px;font-weight:700;line-height:20px;color:#aaa;cursor:pointer}
-    .modal-close:hover{color:#333}
-    .modal-body{margin-bottom:20px}
-    .modal-input{width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px}
+    .modal-content{background:#fff;padding:30px;border-radius:12px;width:90%;max-width:500px}
     .modal-footer{display:flex;gap:10px;justify-content:flex-end}
-    .modal-btn{padding:10px 20px;border:none;border-radius:6px;font-size:16px;cursor:pointer;transition:background .2s}
+    .modal-btn{padding:10px 20px;border:none;border-radius:6px;font-size:16px;cursor:pointer}
     .modal-btn-primary{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff}
-    .modal-btn-primary:hover{opacity:.9}
-    .modal-btn-secondary{background:#f0f0f0;color:#333}
-    .modal-btn-secondary:hover{background:#e0e0e0}
-    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-    @keyframes slideUp{from{transform:translateY(50px);opacity:0}to{transform:translateY(0);opacity:1}}
-    .outputs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(450px,1fr));gap:20px;margin-top:30px}
-    .output-card{background:#fff;border:2px solid #e0e0e0;border-radius:12px;padding:20px;position:relative;transition:transform .2s,box-shadow .2s,border-color .2s}
-    .output-card:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(0,0,0,.1)}
-    .num-badge{position:absolute;top:10px;left:12px;font-size:12px;color:#9aa2b1;font-weight:600;user-select:none;pointer-events:none;}
-    .output-content{background:#f8f9fa;padding:15px;border-radius:8px;min-height:150px;max-height:300px;overflow-y:auto;white-space:pre-wrap;font-family:'Monaco','Menlo',monospace;font-size:14px;line-height:1.5;cursor:pointer;transition:background .2s,transform .2s;position:relative}
-    .output-content:hover{background:#e8f5e9;transform:scale(1.01)}
-    .output-content.clicked{animation:clickPulse .5s}
-    @keyframes clickPulse{0%{background:#e8f5e9}50%{background:#c8e6c9}100%{background:#e8f5e9}}
+
+    .outputs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(480px,1fr));gap:20px;margin-top:20px}
+    .output-card{background:#fff;border:2px solid #e0e0e0;border-radius:12px;padding:20px;position:relative}
+    .num-badge{position:absolute;top:10px;left:12px;font-size:12px;color:#9aa2b1;font-weight:600;user-select:none}
+    .output-content{background:#f8f9fa;padding:15px;border-radius:8px;min-height:150px;max-height:300px;overflow-y:auto;white-space:pre-wrap;font-family:'Monaco','Menlo',monospace;font-size:14px;line-height:1.5}
     .output-content.error{background:#ffebee;color:#c62828}
     .output-content.success{background:#e8f5e9}
-    .refresh-btn{position:absolute;top:8px;right:8px;width:28px;height:28px;background:rgba(255,255,255,.9);border:1px solid #ddd;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;z-index:10;font-size:14px}
-    .refresh-btn:hover{background:#667eea;color:#fff;border-color:#667eea;transform:rotate(180deg)}
-    .refresh-btn.spinning{animation:spin 1s linear infinite}
-    .output-settings{display:block;margin-top:12px;padding-top:12px;border-top:2px solid #f0f0f0;font-size:12px;color:#555;opacity:.9}
-    .settings-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-    .setting-group{display:flex;flex-direction:column;gap:4px}
-    .setting-label{font-size:11px;color:#666}
-    .output-settings select,.output-settings input{padding:6px;border:1px solid #ddd;border-radius:6px;font-size:12px;background:#fff}
-    .style-input{grid-column:1/-1}
-    .style-input textarea{min-height:56px;font-size:12px;padding:6px;border:1px solid #ddd;border-radius:6px}
-    .loading{display:inline-block;width:20px;height:20px;border:3px solid #f3f3f3;border-top:3px solid #667eea;border-radius:50%;animation:spin 1s linear infinite;margin-left:10px}
-    @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+
     .error-message{color:#d32f2f;padding:10px;background:#ffebee;border-radius:6px;margin-top:10px;display:none}
     .error-message.active{display:block}
-    .debug-panel{display:none;background:#f5f5f5;padding:15px;border-radius:8px;margin-bottom:20px;font-size:12px;font-family:monospace;max-height:200px;overflow-y:auto}
-    .debug-panel.active{display:block}
+
     .toast{position:fixed;bottom:30px;right:30px;background:#4CAF50;color:#fff;padding:15px 20px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.15);opacity:0;transform:translateY(20px);transition:all .3s;z-index:1001}
     .toast.show{opacity:1;transform:translateY(0)}
   </style>
   <!-- ===================== END BLOCK C: STYLES ===================================== -->
 </head>
 <body>
-  <!-- ===================== BEGIN BLOCK D: PAGE HEADER + TOP ACTIONS ================= -->
+  <!-- ===================== BEGIN BLOCK D: HEADER =================================== -->
   <div class="container">
     <div class="header">
       <div class="title-section">
@@ -121,645 +99,564 @@
       <div class="top-actions">
         <button class="link-btn" id="apiKeyBtn" onclick="openApiKeyModal()" title="API Key">🔐 API</button>
         <button class="link-btn" onclick="toggleDebug()" title="Debug">🛠 Debug</button>
-        <button class="link-btn" id="pauseAllBtn" onclick="togglePauseAll()" title="Pause/Resume all">⏸ All</button>
-        <input id="delaySec" type="number" min="0" step="0.1" value="5" title="sec. delay" style="width:70px;margin-left:6px;padding:4px 6px;border:1px solid #e0e0e0;border-radius:6px;font-size:12px" onchange="saveDelaySec()" oninput="saveDelaySec()" />
-        <span class="version">v0.25_no_repeat</span>
+        <span class="version">v0.30_editable</span>
       </div>
     </div>
-  <!-- ===================== END BLOCK D: PAGE HEADER + TOP ACTIONS =================== -->
+  <!-- ===================== END BLOCK D: HEADER ===================================== -->
 
-  <!-- ===================== BEGIN BLOCK E: DEBUG PANEL ============================== -->
-    <div class="debug-panel" id="debugPanel"></div>
-  <!-- ===================== END BLOCK E: DEBUG PANEL ================================ -->
-
-  <!-- ===================== BEGIN BLOCK F: INPUT SECTION ============================ -->
+  <!-- ===================== BEGIN BLOCK E: MAIN PROMPT ============================== -->
     <div class="input-section">
       <div class="input-group">
-        <label for="prompt" class="sr-only">Enter text</label>
-        <textarea id="prompt" placeholder="Enter text…&#10;Press Enter to generate…"></textarea>
+        <label for="prompt">Your prompt (shared by all bots)</label>
+        <textarea id="prompt" placeholder="Type your question/instructions… Then click Generate."></textarea>
       </div>
+
+      <!-- Global knowledge files + instructions -->
+      <div class="input-group">
+        <label>Global Knowledge Files</label>
+        <div class="files-panel" id="globalFilesPanel">
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="file" id="globalFileInput" multiple />
+            <button class="link-btn" onclick="uploadGlobalFiles()">Upload to Global</button>
+            <small>Text/Markdown only for now. Max ~500KB per file.</small>
+          </div>
+          <div id="globalFilesList"></div>
+          <div style="margin-top:10px">
+            <label class="sr-only" for="globalFileInstructions">Global File Instructions</label>
+            <textarea id="globalFileInstructions" placeholder="How should bots use global files? e.g., 'Keep in mind these facts' or 'Use these as reference context'"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- run controls -->
+      <div class="gen-row">
+        <button class="generate-btn" onclick="generateOutputs()">Generate</button>
+        <div id="loadingSpinner"></div>
+      </div>
+
       <div class="error-message" id="errorMessage"></div>
     </div>
-  <!-- ===================== END BLOCK F: INPUT SECTION ============================== -->
+  <!-- ===================== END BLOCK E: MAIN PROMPT ================================ -->
 
-  <!-- ===================== BEGIN BLOCK G: OUTPUTS GRID ============================= -->
+  <!-- ===================== BEGIN BLOCK F: OUTPUT GRID (9 bots) ===================== -->
     <div class="outputs-grid" id="outputsGrid"></div>
   </div>
-  <!-- ===================== END BLOCK G: OUTPUTS GRID =============================== -->
+  <!-- ===================== END BLOCK F: OUTPUT GRID ================================ -->
 
-  <!-- ===================== BEGIN BLOCK H: API KEY MODAL ============================ -->
+  <!-- ===================== BEGIN BLOCK G: API KEY MODAL ============================ -->
   <div id="apiKeyModal" class="modal">
     <div class="modal-content">
-      <div class="modal-header">
-        <span class="modal-close" onclick="closeApiKeyModal()">&times;</span>
-        <h2 class="modal-title">OpenAI API Key</h2>
-        <p style="color:#666;font-size:14px;margin-top:5px;">Your API key is stored locally and never sent to any server except OpenAI</p>
-      </div>
-      <div class="modal-body">
-        <input type="password" id="apiKeyInput" class="modal-input" placeholder="sk-..." />
-      </div>
-      <div class="modal-footer">
-        <button class="modal-btn modal-btn-secondary" onclick="closeApiKeyModal()">Cancel</button>
+      <h3 style="margin-bottom:12px">OpenAI API Key</h3>
+      <input type="password" id="apiKeyInput" placeholder="sk-..." style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:16px" />
+      <div class="modal-footer" style="margin-top:12px">
+        <button class="modal-btn" onclick="closeApiKeyModal()">Cancel</button>
         <button class="modal-btn modal-btn-primary" onclick="saveApiKey()">Save</button>
       </div>
     </div>
   </div>
-  <!-- ===================== END BLOCK H: API KEY MODAL ============================== -->
+  <!-- ===================== END BLOCK G: API KEY MODAL ============================== -->
 
-  <!-- ===================== BEGIN BLOCK I: TOAST ==================================== -->
-  <div id="toast" class="toast">Text appended to prompt!</div>
-  <!-- ===================== END BLOCK I: TOAST ====================================== -->
+  <!-- ===================== BEGIN BLOCK H: TOAST ==================================== -->
+  <div id="toast" class="toast">Saved</div>
+  <!-- ===================== END BLOCK H: TOAST ====================================== -->
 
-  <!-- ===================== BEGIN BLOCK J: MAIN SCRIPT ============================== -->
+  <!-- ===================== BEGIN BLOCK I: SCRIPT =================================== -->
   <script>
-    let outputs = Array(9).fill('');
-    let debugMode = false;
-    let apiKey = localStorage.getItem('path_api_key') || '';
+  // -------- Persistence helpers --------
+  const LS = {
+    get(k, def){ try{ const v=localStorage.getItem(k); return v? JSON.parse(v): def; }catch(_){ return def; } },
+    set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(_){} }
+  };
 
-    // Global pause state and per-output abort controllers
-    let globalPaused = false;
-    let abortControllers = Array(9).fill(null);
-    // Timers for continued blocks
-    let continuationTimers = Array(9).fill(null);
-    // Remember the original prompt used for each output
-    let lastPrompts = Array(9).fill('');
-    // Continuation settings
-    let CONTINUE_DELAY_MS = 5000; // default 5 seconds (overridden by input)
-    const CONTINUE_TOKENS = 30;     // fixed +30 tokens each cycle
+  // -------- App State --------
+  let apiKey = localStorage.getItem('path_api_key') || '';
+  let debugMode = false;
 
-    // Default configurations per card (models vary for exploration)
-    const defaultConfigs = [
-      { model: 'gpt-5',        style: 'Write in a concise, narrative style' },
-      { model: 'gpt-5',        style: 'Write in an analytical, essay-like style' },
-      { model: 'gpt-5',        style: 'Write in a punchy, engaging copywriting style' },
-      { model: 'gpt-5-mini',   style: 'Write in plain, accessible English' },
-      { model: 'gpt-5',        style: 'Write in a technical, precise style' },
-      { model: 'gpt-5',        style: 'Write in a thoughtful, storytelling style' },
-      { model: 'gpt-5-nano',   style: 'Write in a casual, conversational blog style' },
-      { model: 'gpt-5',        style: 'Write in a journalistic, news-reporting style' },
-      { model: 'gpt-5-mini',   style: 'Write in a poetic, lyrical style' }
-    ];
+  // Per-bot defaults
+  const defaultConfigs = Array.from({length:9}).map((_,i)=>({
+    name: `Bot ${i+1}`,
+    model: 'gpt-5',
+    reasoning: 'minimal',
+    verbosity: 'low',
+    maxtok: 30,
+    role: '',
+    task: '',
+    style: ([
+      'Write in a concise, narrative style',
+      'Write in an analytical, essay-like style',
+      'Write in a punchy, engaging copywriting style',
+      'Write in plain, accessible English',
+      'Write in a technical, precise style',
+      'Write in a thoughtful, storytelling style',
+      'Write in a casual, conversational blog style',
+      'Write in a journalistic, news-reporting style',
+      'Write in a poetic, lyrical style'
+    ])[i],
+    fileInstructions: '',
+    useGlobalFiles: true,
+    autoContinue: false,
+    botFiles: []  // array of R2 keys
+  }));
 
-    // === Auto-defaults per model so small caps still yield assistant text ===
-    function getModelDefaults(model){
-      const m = (model || '').toLowerCase();
-      if (m.startsWith('gpt-5')) {
-        return { reasoning:'minimal', verbosity:'low', maxtok:30 };
+  // Load persisted per-bot configs
+  const BOT_KEY = i => `path_bot_${i}`;
+  let bots = defaultConfigs.map((cfg,i)=> ({...cfg, ...(LS.get(BOT_KEY(i), {}))}));
+
+  // Global files + instructions
+  let globalFiles = LS.get('path_global_files', []);
+  let globalFileInstructions = LS.get('path_global_file_instructions','');
+
+  // Outputs and timers
+  let outputs = Array(9).fill('');
+  let continuationTimers = Array(9).fill(null);
+  let lastPrompts = Array(9).fill('');
+  let globalPaused = false;
+  const CONTINUE_TOKENS = 30;
+
+  // -------- UI boot --------
+  window.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('globalFileInstructions').value = globalFileInstructions || '';
+    renderGlobalFiles();
+    initializeOutputCards();
+    updateApiKeyButton();
+  });
+
+  // -------- API Key modal --------
+  function openApiKeyModal(){ document.getElementById('apiKeyModal').classList.add('active'); document.getElementById('apiKeyInput').value=apiKey; }
+  function closeApiKeyModal(){ document.getElementById('apiKeyModal').classList.remove('active'); }
+  function saveApiKey(){ apiKey=document.getElementById('apiKeyInput').value; localStorage.setItem('path_api_key',apiKey); updateApiKeyButton(); closeApiKeyModal(); toast('API key saved'); }
+  function updateApiKeyButton(){ const btn=document.getElementById('apiKeyBtn'); if(!btn) return; if(apiKey){btn.classList.add('configured')} else {btn.classList.remove('configured')} }
+
+  function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1500); }
+  function showError(message){ const el=document.getElementById('errorMessage'); el.textContent=message; el.classList.add('active'); setTimeout(()=>el.classList.remove('active'),5000); }
+
+  // -------- Global files --------
+  async function uploadGlobalFiles(){
+    const input = document.getElementById('globalFileInput');
+    if (!input.files || input.files.length===0) return;
+    for (const file of input.files){
+      // Text/Markdown only for now
+      if(!/^text\/|markdown/.test(file.type) && !file.name.endsWith('.txt') && !file.name.endsWith('.md')){
+        showError(`Unsupported type: ${file.name}`);
+        continue;
       }
-      return { reasoning:'medium', verbosity:'medium', maxtok:30 };
-    }
-    function applyModelDefaults(index, model, fromChange){
-      const d = getModelDefaults(model);
-      const rSel = document.getElementById(`reasoning-${index}`);
-      const vSel = document.getElementById(`verbosity-${index}`);
-      const tInp = document.getElementById(`maxtok-${index}`);
-      if (rSel) rSel.value = d.reasoning;
-      if (vSel) vSel.value = d.verbosity;
-      if (tInp) tInp.value = d.maxtok;
-      updateVarSummary(index);
-      addDebugLog(`Output ${index + 1}: Applied model defaults for ${model} -> reasoning=${d.reasoning}, verbosity=${d.verbosity}, max_tokens=${d.maxtok}${fromChange?' (on model change)':''}`);
-    }
+      if (file.size > 500*1024) { showError(`Too large: ${file.name}`); continue; }
 
-    // On load
-    window.addEventListener('DOMContentLoaded', () => {
-      initializeOutputCards();
-      updateApiKeyButton();
-      const vText = document.querySelector('.version')?.textContent?.trim();
-      if (vText) document.title = `PATH ${vText} - Parallel Adaptive Text Helper`;
-      const ta = document.getElementById('prompt');
-      if (ta) {
-        ta.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
-            e.preventDefault();
-            generateOutputs();
-          }
-        });
-      }
-    });
-
-    function updateApiKeyButton(){
-      const btn = document.getElementById('apiKeyBtn');
-      if (!btn) return;
-      if (apiKey){ btn.classList.add('configured'); btn.textContent='🔐 API'; }
-      else { btn.classList.remove('configured'); btn.textContent='🔑 API'; }
+      const key = await uploadToR2(file);
+      if (key){ globalFiles.push(key); LS.set('path_global_files', globalFiles); }
     }
+    input.value = ''; renderGlobalFiles();
+  }
 
-    function openApiKeyModal(){document.getElementById('apiKeyModal').classList.add('active');document.getElementById('apiKeyInput').value=apiKey;}
-    function closeApiKeyModal(){document.getElementById('apiKeyModal').classList.remove('active');}
-    function saveApiKey(){apiKey=document.getElementById('apiKeyInput').value;localStorage.setItem('path_api_key',apiKey);updateApiKeyButton();closeApiKeyModal();showToast('API Key saved!');}
-
-    function toggleDebug(){debugMode=!debugMode;document.getElementById('debugPanel').classList.toggle('active');}
-    function addDebugLog(message){if(debugMode){const p=document.getElementById('debugPanel');const ts=new Date().toISOString().substr(11,8);p.innerHTML+=`[${ts}] ${message}\n`;p.scrollTop=p.scrollHeight;}}
-    function showToast(message){const t=document.getElementById('toast');t.textContent=message;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
-
-    function getContinueDelayMs(){
-      const el = document.getElementById('delaySec');
-      const v = parseFloat(el?.value);
-      return (Number.isFinite(v) && v >= 0) ? Math.round(v * 1000) : 5000;
-    }
-    function saveDelaySec(){
-      const el = document.getElementById('delaySec');
-      if (!el) return;
-      localStorage.setItem('path_delay_sec', el.value);
-      CONTINUE_DELAY_MS = getContinueDelayMs();
-      addDebugLog(`Delay set to ${el.value}s`);
-    }
-    document.addEventListener('DOMContentLoaded', ()=>{
-      const el = document.getElementById('delaySec');
-      const saved = localStorage.getItem('path_delay_sec');
-      if (el && saved !== null){ el.value = saved; }
-      CONTINUE_DELAY_MS = getContinueDelayMs();
-    });
-
-    function extractTextFromResponse(responseData){
-      try{
-        if (!responseData) return '';
-        if (responseData.output_text) return responseData.output_text;
-        if (responseData.completion) return responseData.completion;
-        if (Array.isArray(responseData.output)){
-          const msg = responseData.output.find(x=>x.type==='message');
-          if (msg && Array.isArray(msg.content)){
-            const t = msg.content.find(x=>x.type==='output_text');
-            if (t && t.text) return t.text;
-            return msg.content.map(x=>x.text||x.message||'').join('\n');
-          }
-        }
-        if (Array.isArray(responseData.choices)){
-          return responseData.choices[0]?.message?.content || responseData.choices[0]?.text || '';
-        }
-      }catch(e){}
-      return '';
-    }
-
-    // Toggle global pause/resume. Pausing aborts all in-flight requests.
-    function togglePauseAll(){
-      try{ continuationTimers.forEach((t,i)=>{ if (t){ clearTimeout(t); continuationTimers[i]=null; } }); }catch(e){}
-      const btn = document.getElementById('pauseAllBtn');
-      if (!globalPaused){
-        globalPaused = true;
-        abortControllers.forEach((ctl)=>{ try{ ctl && ctl.abort(); }catch(e){} });
-        if (btn){ btn.textContent = '▶ All'; btn.title = 'Resume all'; }
-        addDebugLog('Global pause engaged: aborted all active requests.');
-        showToast('Paused all outputs');
-      } else {
-        globalPaused = false;
-        if (btn){ btn.textContent = '⏸ All'; btn.title = 'Pause all'; }
-        addDebugLog('Global pause disabled.');
-        showToast('Resumed');
-        try{
-          for (let i=0;i<outputs.length;i++){
-            if (outputs[i] && lastPrompts[i] && !continuationTimers[i]){
-              scheduleNextContinuation(i, apiKey, lastPrompts[i]);
-            }
-          }
-        }catch(e){}
-      }
-    }
-
-    // Collapsible settings: summary + toggle
-    function getVarSummary(index){
-      const model = document.getElementById(`model-${index}`)?.value || '';
-      const reasoning = document.getElementById(`reasoning-${index}`)?.value || '';
-      const verbosity = document.getElementById(`verbosity-${index}`)?.value || '';
-      const cap = document.getElementById(`maxtok-${index}`)?.value || 'auto';
-      const style = document.getElementById(`style-${index}`)?.value || '';
-      const words = style.trim().split(' ').filter(Boolean).slice(0,4).join(' ');
-      const styleFrag = words ? ` · s:${words}…` : '';
-      return `⚙ ${model} · r:${reasoning} · v:${verbosity} · cap:${cap}${styleFrag}`;
-    }
-    function updateVarSummary(index){
-      const el=document.getElementById(`varssum-${index}`);
-      if (el) el.textContent=getVarSummary(index);
-    }
-    function toggleVars(index){
-      const s=document.getElementById(`settings-${index}`);
-      const b=document.getElementById(`varsbar-${index}`);
-      if (!s||!b) return;
-      if (s.classList.contains('collapsed')){ s.classList.remove('collapsed'); b.classList.add('open'); }
-      else { s.classList.add('collapsed'); b.classList.remove('open'); }
-    }
-
-    function initializeOutputCards(){
-      const grid=document.getElementById('outputsGrid');
-      grid.innerHTML='';
-      for (let i=0;i<9;i++){
-        const card=createOutputCard(i);
-        grid.appendChild(card);
-        const modelSel=document.getElementById(`model-${i}`);
-        if(modelSel) applyModelDefaults(i, modelSel.value, false);
-        updateVarSummary(i);
-      }
-    }
-
-    function createOutputCard(index){
-      const cfg=defaultConfigs[index];
-      const card=document.createElement('div');
-      card.className='output-card';
-      card.id=`output-${index}`;
-      card.innerHTML=`
-        <div class="num-badge">${index+1}.</div>
-        <button class="refresh-btn" id="refresh-${index}" onclick="refreshOutput(${index})" title="Regenerate this output">↻</button>
-        <div class="output-content" id="content-${index}" onclick="appendOutput(${index})">Ready to generate...</div>
-        <div class="vars-bar" id="varsbar-${index}" onclick="toggleVars(${index})"><span class="chev">▸</span><span id="varssum-${index}"></span></div>
-        <div class="output-settings collapsed" id="settings-${index}">
-          <div class="settings-grid">
-            <div class="setting-group">
-              <label class="setting-label">Model</label>
-              <select id="model-${index}">
-                <option value="gpt-5" ${cfg.model==='gpt-5'?'selected':''}>gpt-5</option>
-                <option value="gpt-5-mini" ${cfg.model==='gpt-5-mini'?'selected':''}>gpt-5-mini</option>
-                <option value="gpt-5-nano" ${cfg.model==='gpt-5-nano'?'selected':''}>gpt-5-nano</option>
-                <option value="gpt-5-thinking">gpt-5-thinking</option>
-                <option value="gpt-5-thinking-mini">gpt-5-thinking-mini</option>
-                <option value="gpt-5-thinking-nano">gpt-5-thinking-nano</option>
-                <option value="gpt-4-turbo-preview">GPT-4 Turbo (Fallback)</option>
-                <option value="gpt-4">GPT-4 (Fallback)</option>
-                <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Fallback)</option>
-              </select>
-            </div>
-            <div class="setting-group">
-              <label class="setting-label">Reasoning Effort</label>
-              <select id="reasoning-${index}">
-                <option value="minimal">minimal</option>
-                <option value="low">low</option>
-                <option value="medium">medium</option>
-                <option value="high">high</option>
-              </select>
-            </div>
-            <div class="setting-group">
-              <label class="setting-label">Verbosity</label>
-              <select id="verbosity-${index}">
-                <option value="low">low</option>
-                <option value="medium">medium</option>
-                <option value="high">high</option>
-              </select>
-            </div>
-            <div class="setting-group">
-              <label class="setting-label">Max tokens (hard cap)</label>
-              <input type="number" id="maxtok-${index}" min="1" step="1" value="30" placeholder="e.g., 80" title="≈1–2 short sentences" />
-            </div>
-            <div class="setting-group style-input">
-              <label class="setting-label">Style Instructions (prepended to prompt)</label>
-              <textarea id="style-${index}" placeholder="E.g., 'Write in the style of Hemingway' or 'Use technical language'">${cfg.style || ''}</textarea>
-            </div>
-          </div>
+  function renderGlobalFiles(){
+    const list = document.getElementById('globalFilesList');
+    list.innerHTML = '';
+    if (!globalFiles.length){ list.innerHTML = '<small>No global files uploaded yet.</small>'; return; }
+    globalFiles.forEach((key, idx)=>{
+      const row = document.createElement('div');
+      row.className='file-row';
+      const name = key.split('/').pop();
+      row.innerHTML = `<div><strong>${name}</strong><span class="badge">global</span><br><small>${key}</small></div>
+        <div>
+          <button class="link-btn" onclick="previewFile('${encodeURIComponent(key)}')">Preview</button>
+          <button class="link-btn" onclick="removeGlobalFile(${idx})">Remove</button>
         </div>`;
-      const modelSel = card.querySelector(`#model-${index}`);
-      const rSel = card.querySelector(`#reasoning-${index}`);
-      const vSel = card.querySelector(`#verbosity-${index}`);
-      const tok = card.querySelector(`#maxtok-${index}`);
-      const styleTA = card.querySelector(`#style-${index}`);
-      if (modelSel){ modelSel.addEventListener('change', (e)=> { applyModelDefaults(index, e.target.value, true); updateVarSummary(index); }); }
-      if (rSel){ rSel.addEventListener('change', ()=> updateVarSummary(index)); }
-      if (vSel){ vSel.addEventListener('change', ()=> updateVarSummary(index)); }
-      if (tok){ tok.addEventListener('change', ()=> updateVarSummary(index)); tok.addEventListener('input', ()=> updateVarSummary(index)); }
-      if (styleTA){ styleTA.addEventListener('input', ()=> updateVarSummary(index)); }
-      updateVarSummary(index);
-      return card;
-    }
-
-    function scheduleNextContinuation(index, apiKey, basePrompt){
-      if (globalPaused) return;
-      if (continuationTimers[index]){ clearTimeout(continuationTimers[index]); continuationTimers[index]=null; }
-      const _delay = getContinueDelayMs();
-      continuationTimers[index] = setTimeout(()=>{
-        continuationTimers[index]=null;
-        if (!globalPaused){ generateContinuation(index, apiKey, basePrompt, CONTINUE_TOKENS); }
-      }, _delay);
-      addDebugLog(`Output ${index+1}: scheduled next +${CONTINUE_TOKENS} tokens in ${(_delay/1000)}s`);
-    }
-
-    async function generateContinuation(index, apiKey, basePrompt, extraTokens){
-      if (globalPaused){ addDebugLog(`Output ${index+1}: continuation canceled (paused)`); return; }
-      const model=document.getElementById(`model-${index}`).value;
-      const reasoning=document.getElementById(`reasoning-${index}`).value;
-      const verbosity=document.getElementById(`verbosity-${index}`).value;
-      const style=document.getElementById(`style-${index}`).value;
-      const contentDiv=document.getElementById(`content-${index}`);
-      const already = outputs[index] || '';
-      try{
-        let controller = new AbortController(); abortControllers[index] = controller;
-        const isGPT5Model = model.startsWith('gpt-5');
-        if (isGPT5Model){
-          const instruction = `${style?style+'\n\n':''}Continue the writing from where ALREADY_WRITTEN ends. Do NOT repeat earlier words.\n\nORIGINAL_TEXT:\n${basePrompt}\n\nALREADY_WRITTEN:\n${already}\n\nNEXT:`;
-          const body = { model, input: instruction, reasoning:{effort:reasoning}, text:{verbosity}, max_output_tokens: extraTokens };
-          const response = await fetch('https://api.openai.com/v1/responses', { method:'POST', headers:{'Authorization':`Bearer ${apiKey}`,'Content-Type':'application/json'}, body: JSON.stringify(body), signal: controller.signal });
-          const raw = await response.text(); let data; try{ data=JSON.parse(raw);}catch(e){ data={output_text:raw}; }
-          if (!response.ok){ throw new Error((data && data.error && data.error.message) || `HTTP ${response.status}`); }
-          const chunk = (extractTextFromResponse(data)||'').trim();
-          const joiner = already.trim()? ' // ' : '';
-          outputs[index] = (already + joiner + chunk).trim();
-          contentDiv.textContent = outputs[index];
-          addDebugLog(`Output ${index+1}: appended +${extraTokens} tokens (responses API)`);
-        } else {
-          let systemMessage = `Continue the user's text exactly from where it left off. Avoid repeating prior words. ${style||''}`;
-          if (verbosity==='low') systemMessage += ' Keep it brief.';
-          else if (verbosity==='high') systemMessage += ' Add a bit more detail.';
-          const userPrompt = `ORIGINAL_TEXT:\n${basePrompt}\n\nALREADY_WRITTEN:\n${already}\n\nContinue from the last word above:`;
-          const chatBody = { model, messages:[{role:'system',content:systemMessage},{role:'user',content:userPrompt}], max_tokens: extraTokens };
-          const resp = await fetch('https://api.openai.com/v1/chat/completions', { method:'POST', headers:{'Authorization':`Bearer ${apiKey}`,'Content-Type':'application/json'}, body: JSON.stringify(chatBody), signal: controller.signal });
-          const raw = await resp.text(); let data; try{ data=JSON.parse(raw);}catch(e){ data={output_text:raw}; }
-          if (!resp.ok){ throw new Error((data && data.error && data.error.message) || `HTTP ${resp.status}`); }
-          const chunk = (extractTextFromResponse(data)||'').trim();
-          const joiner = already.trim()? ' // ' : '';
-          outputs[index] = (already + joiner + chunk).trim();
-          contentDiv.textContent = outputs[index];
-          addDebugLog(`Output ${index+1}: appended +${extraTokens} tokens (chat API)`);
-        }
-        abortControllers[index] = null;
-        if (!globalPaused){ scheduleNextContinuation(index, apiKey, basePrompt); }
-      }catch(err){
-        const msg = String(err && (err.message||err)) || '';
-        if (msg.toLowerCase().includes('abort')){
-          addDebugLog(`Output ${index+1}: continuation aborted`);
-          abortControllers[index] = null;
-          return;
-        }
-        contentDiv.classList.add('error'); contentDiv.textContent = 'Continuation error: ' + msg;
-        addDebugLog(`Output ${index+1}: continuation error -> ${msg}`);
-        abortControllers[index] = null;
-      }
-    }
-
-    function appendOutput(index){
-      if (outputs[index] && !outputs[index].startsWith('Ready to generate') && !outputs[index].startsWith('Error')){
-        const prompt=document.getElementById('prompt');
-        const separator = prompt.value.trim() ? ' // ' : '';
-        prompt.value += separator + outputs[index];
-        prompt.scrollTop=prompt.scrollHeight;
-        const contentDiv=document.getElementById(`content-${index}`);
-        contentDiv.classList.add('clicked');
-        setTimeout(()=>contentDiv.classList.remove('clicked'),500);
-        showToast('Text appended to prompt!');
-      }
-    }
-
-    async function refreshOutput(index){
-      if (globalPaused){
-        globalPaused = false;
-        const btn = document.getElementById('pauseAllBtn');
-        if (btn){ btn.textContent = '⏸ All'; btn.title = 'Pause all'; }
-        addDebugLog('Auto-unpaused: Refresh button clicked');
-      }
-      if (!apiKey){showError('Please configure your API key first');openApiKeyModal();return;}
-      const prompt=document.getElementById('prompt').value;
-      if (!prompt){showError('Please enter text first');return;}
-
-      const refreshBtn = document.getElementById(`refresh-${index}`);
-      const contentDiv = document.getElementById(`content-${index}`);
-      refreshBtn.classList.add('spinning');
-      contentDiv.textContent='Regenerating...';
-      if (continuationTimers[index]){ clearTimeout(continuationTimers[index]); continuationTimers[index]=null; }
-      contentDiv.classList.remove('error','success');
-      addDebugLog(`Regenerating output ${index + 1}...`);
-      await generateSingleOutput(index, apiKey, prompt);
-      refreshBtn.classList.remove('spinning');
-      addDebugLog(`Output ${index + 1} regeneration complete`);
-    }
-
-    async function generateOutputs(){
-      try{ continuationTimers.forEach((t,i)=>{ if (t){ clearTimeout(t); continuationTimers[i]=null; } }); }catch(e){}
-      if (globalPaused){
-        globalPaused = false;
-        const btn = document.getElementById('pauseAllBtn');
-        if (btn){ btn.textContent = '⏸ All'; btn.title = 'Pause all'; }
-        addDebugLog('Auto-unpaused: Enter key pressed to generate outputs');
-      }
-      if (!apiKey){showError('Please configure your API key first');openApiKeyModal();return;}
-      const prompt=document.getElementById('prompt').value;
-      const errorMsg=document.getElementById('errorMessage');
-      if (!prompt){showError('Please enter text');return;}
-
-      errorMsg.classList.remove('active');
-      if (debugMode) document.getElementById('debugPanel').innerHTML='';
-      addDebugLog('Starting generation for 9 outputs...');
-
-      const btn=document.querySelector('.generate-btn');
-      if (btn) btn.disabled=true; const ls=document.getElementById('loadingSpinner'); if (ls) ls.innerHTML='<span class="loading"></span>'; 
-
-      for (let i=0;i<9;i++){
-        const contentDiv=document.getElementById(`content-${i}`);
-        contentDiv.textContent='Generating...';
-        contentDiv.classList.remove('error','success');
-      }
-
-      const promises=[];
-      for (let i=0;i<9;i++) promises.push(generateSingleOutput(i, apiKey, prompt));
-      await Promise.all(promises);
-
-      if (btn) btn.disabled=false; const ls2=document.getElementById('loadingSpinner'); if (ls2) ls2.innerHTML='';
-      addDebugLog('All generation attempts complete');
-    }
-
-    async function generateSingleOutput(index, apiKey, prompt){
-      if (globalPaused){ const contentDiv=document.getElementById(`content-${index}`); contentDiv.textContent='⏸ Paused'; return; }
-      const model=document.getElementById(`model-${index}`).value;
-      const reasoning=document.getElementById(`reasoning-${index}`).value;
-      const verbosity=document.getElementById(`verbosity-${index}`).value;
-      const style=document.getElementById(`style-${index}`).value;
-      let maxTokens=parseInt(document.getElementById(`maxtok-${index}`)?.value,10);
-      if (!(maxTokens>0)) maxTokens=null;
-      const contentDiv=document.getElementById(`content-${index}`);
-
-      try{
-        let controller = null;
-        addDebugLog(`Output ${index+1}: Starting with model=${model}, reasoning=${reasoning}, verbosity=${verbosity}, max_tokens=${(parseInt(document.getElementById(`maxtok-${index}`)?.value,10)||'auto')}`);
-        const instruction = `You must continue the text below starting EXACTLY after the last word. Do NOT repeat ANY words from the original text.
-
-Example:
-Original: "The cat sat on"
-Good continuation: "the mat, purring softly"
-Bad continuation: "The cat sat on the mat"
-
-${style ? style + '\n\n' : ''}Now continue this text (start your response as if it's the very next word):
-
-${prompt}
-
-YOUR CONTINUATION (start immediately with new words):`;
-        const fullInput = instruction;
-        const isGPT5Model = model.startsWith('gpt-5');
-
-        if (isGPT5Model){
-          const requestBody = { model, input: fullInput, reasoning: { effort: reasoning }, text: { verbosity } };
-          if (maxTokens) requestBody.max_output_tokens = maxTokens;
-          addDebugLog(`Output ${index+1}: Attempting GPT-5 Responses API with body: ${JSON.stringify(requestBody)}`);
-
-          controller = new AbortController(); abortControllers[index] = controller;
-          const response = await fetch('https://api.openai.com/v1/responses', { method:'POST', headers:{'Authorization':`Bearer ${apiKey}`,'Content-Type':'application/json'}, body: JSON.stringify(requestBody), signal: controller.signal });
-          let responseData; const responseText = await response.text();
-          try{ responseData = JSON.parse(responseText);} catch(e){ responseData = responseText; }
-          addDebugLog(`Output ${index+1}: Raw response: ${typeof responseData==='string'?responseData:JSON.stringify(responseData)}`);
-          if (!response.ok) throw new Error(`GPT-5 API not available. Falling back to GPT-4.`);
-          handleSuccessfulResponse(responseData, index, contentDiv);
-          lastPrompts[index] = prompt;
-          scheduleNextContinuation(index, apiKey, prompt);
-          abortControllers[index] = null;
-        } else {
-          addDebugLog(`Output ${index+1}: Using standard Chat Completions API with ${model}`);
-          let systemMessage = `You are a completion assistant. When given text, you must continue it WITHOUT repeating any of the original words. Start your response as if you're writing the very next word that would follow. ${style || ''}`;
-          if (verbosity==='low') systemMessage += ' Keep your continuation brief.';
-          else if (verbosity==='high') systemMessage += ' Provide a detailed continuation.';
-
-          const userPrompt = `Complete this text by adding new words after it (DO NOT repeat the text itself):\n"${prompt}"\n\nContinue from here:`;
-          const chatBody = { model, messages:[{role:'system',content:systemMessage},{role:'user',content:userPrompt}] };
-          if (maxTokens) chatBody.max_tokens = maxTokens;
-          controller = new AbortController(); abortControllers[index] = controller;
-          const chatResponse = await fetch('https://api.openai.com/v1/chat/completions', { method:'POST', headers:{'Authorization':`Bearer ${apiKey}`,'Content-Type':'application/json'}, body: JSON.stringify(chatBody), signal: controller.signal });
-          const chatData = await chatResponse.json();
-          if (!chatResponse.ok){
-            addDebugLog(`Output ${index+1}: Chat API failed with status ${chatResponse.status}`);
-            addDebugLog(`Output ${index+1}: Chat error: ${JSON.stringify(chatData)}`);
-            let errorText = `Error ${chatResponse.status}: `;
-            if (chatData.error){ errorText += chatData.error.message || chatData.error.type || 'Unknown error'; if (chatData.error.code) errorText += ` (Code: ${chatData.error.code})`; }
-            else { errorText += JSON.stringify(chatData); }
-            contentDiv.textContent = errorText; contentDiv.classList.add('error');
-            throw new Error(errorText);
-          }
-          addDebugLog(`Output ${index+1}: Chat API succeeded`);
-          const output = chatData.choices?.[0]?.message?.content || 'No output received';
-          outputs[index]=output; contentDiv.textContent=output; contentDiv.classList.add('success');
-          lastPrompts[index] = prompt;
-          scheduleNextContinuation(index, apiKey, prompt);
-          abortControllers[index] = null;
-        }
-      } catch(error){
-        if ((error && (error.name === 'AbortError' || String(error.message||'').toLowerCase().includes('abort'))) ){
-          const contentDiv=document.getElementById(`content-${index}`);
-          contentDiv.textContent = '⏸ Paused';
-          contentDiv.classList.remove('error');
-          contentDiv.classList.add('success');
-          addDebugLog(`Output ${index+1}: aborted (paused).`);
-          abortControllers[index] = null;
-          return;
-        }
-        addDebugLog(`Output ${index+1}: Error occurred: ${error.message}`);
-        if (model.startsWith('gpt-5')){
-          addDebugLog(`Output ${index+1}: Attempting GPT-4 fallback`);
-          let fallbackModel='gpt-4-turbo-preview';
-          if (model==='gpt-5-mini') fallbackModel='gpt-4';
-          if (model==='gpt-5-nano') fallbackModel='gpt-3.5-turbo';
-          try{
-            const systemMessage = 'You are a text continuation assistant. Continue the given text seamlessly without repeating any part of it.' + (style ? ` ${style}` : '');
-            const userPrompt = `Continue this text (do not repeat it):\n\n${prompt}`;
-            const chatBody = { model: fallbackModel, messages:[{role:'system',content:systemMessage},{role:'user',content:userPrompt}] };
-            if (maxTokens) chatBody.max_tokens = maxTokens;
-            const chatResponse = await fetch('https://api.openai.com/v1/chat/completions', { method:'POST', headers:{'Authorization':`Bearer ${apiKey}`,'Content-Type':'application/json'}, body: JSON.stringify(chatBody) });
-            const chatData = await chatResponse.json();
-            if (chatResponse.ok){
-              const output = chatData.choices?.[0]?.message?.content || 'No output received';
-              outputs[index]=output; contentDiv.textContent=output; contentDiv.classList.add('success');
-              lastPrompts[index] = prompt;
-              scheduleNextContinuation(index, apiKey, prompt);
-            } else { throw new Error(chatData.error?.message || 'API Error'); }
-          } catch(fallbackError){
-            contentDiv.textContent = `Error: ${fallbackError.message}`; contentDiv.classList.add('error');
-          }
-        } else {
-          contentDiv.textContent = `Error: ${error.message}`; contentDiv.classList.add('error');
-        }
-      }
-    }
-
-    function handleSuccessfulResponse(responseData, index, contentDiv){
-      addDebugLog(`Output ${index+1}: Processing successful response`);
-      let output='No output received';
-      if (responseData.output && Array.isArray(responseData.output)){
-        addDebugLog(`Output ${index+1}: Detected GPT-5 response structure`);
-        const messageObj = responseData.output.find(item=>item.type==='message');
-        if (messageObj && messageObj.content && Array.isArray(messageObj.content)){
-          const textContent = messageObj.content.find(item=>item.type==='output_text');
-          if (textContent && textContent.text){ output=textContent.text; addDebugLog(`Output ${index+1}: Successfully extracted GPT-5 text content`); }
-          else {
-            output = messageObj.content.map(item=>{ if (item.text) return item.text; if (item.content) return item.content; if (typeof item==='string') return item; return JSON.stringify(item); }).join('\n');
-          }
-        } else {
-          output = responseData.output.map(item=>{ if (item.type==='reasoning') return ''; if (item.content && Array.isArray(item.content)) return item.content.map(c=>c.text||c.content||JSON.stringify(c)).join('\n'); if (item.text) return item.text; if (item.message) return item.message; return ''; }).filter(Boolean).join('\n');
-        }
-        if (responseData.usage){ const rt = responseData.usage.output_tokens_details?.reasoning_tokens || 0; addDebugLog(`Output ${index+1}: Tokens used - Input: ${responseData.usage.input_tokens}, Output: ${responseData.usage.output_tokens}, Reasoning: ${rt}`); }
-      } else if (Array.isArray(responseData)){
-        output = responseData.map(item=> typeof item==='string'? item : (item.text||item.content||item.message||JSON.stringify(item,null,2))).join('\n\n');
-      } else if (typeof responseData==='string'){
-        output = responseData;
-      } else if (responseData.output_text){ output = responseData.output_text; }
-      else if (responseData.choices && Array.isArray(responseData.choices)){
-        const choice=responseData.choices[0];
-        if (choice.message?.content) output=choice.message.content; else if (choice.text) output=choice.text; else output=JSON.stringify(choice,null,2);
-      } else if (responseData.data){ output = typeof responseData.data==='string'? responseData.data : JSON.stringify(responseData.data,null,2); }
-      else if (responseData.result){ output = typeof responseData.result==='string'? responseData.result : JSON.stringify(responseData.result,null,2); }
-      else if (responseData.completion){ output = typeof responseData.completion==='string'? responseData.completion : JSON.stringify(responseData.completion,null,2); }
-      else { output = `Unexpected response format:\n${JSON.stringify(responseData,null,2)}`; }
-      outputs[index]=output; contentDiv.textContent=output; contentDiv.classList.add('success');
-      lastPrompts[index] = prompt;
-      scheduleNextContinuation(index, apiKey, prompt);
-      abortControllers[index] = null;
-    }
-
-    function showError(message){
-      const errorMsg=document.getElementById('errorMessage');
-      errorMsg.textContent=message; errorMsg.classList.add('active');
-      setTimeout(()=>errorMsg.classList.remove('active'),5000);
-    }
-
-    window.addEventListener('keydown', (e)=>{ if (e.key==='Escape') closeApiKeyModal(); });
-
-    // Global numeric hotkeys: 1..9 append that card's output into the main textbox
-    function handleNumberHotkeys(e){
-      const ae = document.activeElement;
-      const tag = (ae && ae.tagName) ? ae.tagName.toLowerCase() : '';
-      const isInPrompt = (tag === 'textarea' && ae.id === 'prompt');
-      const isOtherInput = (tag === 'input' || (tag === 'textarea' && !isInPrompt) || (ae && ae.isContentEditable));
-      if (isOtherInput) return;
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
-      const k = e.key;
-      if (k >= '1' && k <= '9'){
-        const idx = parseInt(k, 10) - 1;
-        if (idx >= 0 && idx < 9){
-          e.preventDefault();
-          appendOutput(idx);
-          showToast(`Appended output ${idx+1}`);
-        }
-      }
-    }
-    document.addEventListener('keydown', handleNumberHotkeys);
-
-    // ---- Persistence of per-card variable settings ----
-    const VAR_KEYS = ['model','reasoning','verbosity','style','maxtok'];
-    function cardKey(i,k){ return `path_card_${i}_${k}`; }
-
-    function loadCardSettings(index){
-      try{
-        VAR_KEYS.forEach(k=>{
-          const el = document.getElementById(`${k}-${index}`);
-          if (!el) return;
-          const saved = localStorage.getItem(cardKey(index,k));
-          if (saved !== null){
-            el.value = saved;
-          }
-        });
-        if (typeof updateVarSummary === 'function'){ updateVarSummary(index); }
-      }catch(e){ addDebugLog && addDebugLog(`Settings load error [${index}]: ${e}`); }
-    }
-
-    function handleSettingEvent(e){
-      const t = e && e.target; if (!t || !t.id) return;
-      const m = t.id.match(/^(model|reasoning|verbosity|style|maxtok)-(\d+)$/);
-      if (!m) return;
-      const key = m[1]; const index = parseInt(m[2],10);
-      try{
-        localStorage.setItem(cardKey(index,key), t.value);
-      }catch(e){ addDebugLog && addDebugLog(`Settings save error [${index}/${key}]: ${e}`); }
-      if (typeof updateVarSummary === 'function'){ updateVarSummary(index); }
-    }
-
-    document.addEventListener('change', handleSettingEvent);
-    document.addEventListener('input', handleSettingEvent);
-
-    document.addEventListener('DOMContentLoaded', ()=>{
-      try{
-        for (let i=0;i<9;i++){ loadCardSettings(i); }
-      }catch(e){ addDebugLog && addDebugLog('Initial settings load failed: '+e); }
+      list.appendChild(row);
     });
+  }
+  async function previewFile(keyEnc){
+    try{
+      const r = await fetch('/api/file-url?key='+keyEnc);
+      const j = await r.json();
+      const t = await (await fetch(j.url)).text();
+      alert((t||'').slice(0,2000)); // simple preview
+    }catch(e){ showError('Preview failed'); }
+  }
+  function removeGlobalFile(i){
+    globalFiles.splice(i,1);
+    LS.set('path_global_files', globalFiles);
+    renderGlobalFiles();
+  }
+  document.getElementById('globalFileInstructions').addEventListener('input', (e)=>{
+    globalFileInstructions = e.target.value || '';
+    LS.set('path_global_file_instructions', globalFileInstructions);
+  });
+
+  // -------- R2 upload helper (uses your /api/upload-url) --------
+  async function uploadToR2(file){
+    const resp = await fetch('/api/upload-url', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ filename: file.name, contentType: file.type || 'text/plain' })
+    });
+    if(!resp.ok){ showError('Upload URL error'); return null; }
+    const {url, key} = await resp.json();
+    const put = await fetch(url, { method:'PUT', headers:{'Content-Type': file.type || 'text/plain'}, body: file });
+    if(!put.ok){ showError('Upload failed'); return null; }
+    return key;
+  }
+
+  // -------- Output grid (9 bots) --------
+  function initializeOutputCards(){
+    const grid = document.getElementById('outputsGrid'); grid.innerHTML='';
+    for (let i=0;i<9;i++){ grid.appendChild(createOutputCard(i)); }
+  }
+
+  function createOutputCard(index){
+    const cfg = bots[index];
+    const card = document.createElement('div'); card.className='output-card'; card.id=`output-${index}`;
+    card.innerHTML = `
+      <div class="num-badge">${index+1}.</div>
+
+      <div class="controls-row sp6">
+        <div class="sp3">
+          <label>Bot Name</label>
+          <input type="text" id="name-${index}" value="${escapeHtml(cfg.name)}" />
+        </div>
+        <div>
+          <label>Model</label>
+          <select id="model-${index}">
+            <option value="gpt-5" ${cfg.model==='gpt-5'?'selected':''}>gpt-5</option>
+            <option value="gpt-5-mini" ${cfg.model==='gpt-5-mini'?'selected':''}>gpt-5-mini</option>
+            <option value="gpt-5-nano" ${cfg.model==='gpt-5-nano'?'selected':''}>gpt-5-nano</option>
+            <option value="gpt-4-turbo-preview">gpt-4-turbo-preview</option>
+            <option value="gpt-4">gpt-4</option>
+            <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+          </select>
+        </div>
+        <div>
+          <label>Reasoning Effort</label>
+          <select id="reasoning-${index}">
+            <option value="minimal" ${cfg.reasoning==='minimal'?'selected':''}>minimal</option>
+            <option value="low" ${cfg.reasoning==='low'?'selected':''}>low</option>
+            <option value="medium" ${cfg.reasoning==='medium'?'selected':''}>medium</option>
+            <option value="high" ${cfg.reasoning==='high'?'selected':''}>high</option>
+          </select>
+        </div>
+        <div>
+          <label>Verbosity</label>
+          <select id="verbosity-${index}">
+            <option value="low" ${cfg.verbosity==='low'?'selected':''}>low</option>
+            <option value="medium" ${cfg.verbosity==='medium'?'selected':''}>medium</option>
+            <option value="high" ${cfg.verbosity==='high'?'selected':''}>high</option>
+          </select>
+        </div>
+        <div>
+          <label>Max tokens</label>
+          <input type="number" id="maxtok-${index}" min="1" step="1" value="${cfg.maxtok}" />
+        </div>
+      </div>
+
+      <div class="controls-row sp6">
+        <div class="sp3">
+          <label>Role</label>
+          <input type="text" id="role-${index}" placeholder="I am a therapist / researcher / friend…" value="${escapeHtml(cfg.role)}" />
+        </div>
+        <div class="sp3">
+          <label>Task</label>
+          <input type="text" id="task-${index}" placeholder="What should this bot do?" value="${escapeHtml(cfg.task)}" />
+        </div>
+        <div class="sp6">
+          <label>Style</label>
+          <textarea id="style-${index}" style="min-height:60px">${escapeHtml(cfg.style||'')}</textarea>
+        </div>
+      </div>
+
+      <div class="controls-row sp6">
+        <div class="sp6 files-panel">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:8px">
+              <input type="checkbox" id="useGlobal-${index}" ${cfg.useGlobalFiles?'checked':''} />
+              Use Global Files
+            </label>
+            <input type="file" id="botFileInput-${index}" multiple />
+            <button class="link-btn" onclick="uploadBotFiles(${index})">Upload to this bot</button>
+          </div>
+          <div id="botFilesList-${index}" style="margin-top:8px"></div>
+          <div style="margin-top:10px">
+            <label class="sr-only" for="fileInst-${index}">File Instructions</label>
+            <textarea id="fileInst-${index}" placeholder="How should this bot use its files? (Imitate style? Keep facts in mind? Cite strictly?)" style="min-height:60px">${escapeHtml(cfg.fileInstructions||'')}</textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls-row sp6" style="align-items:center">
+        <label style="display:flex;align-items:center;gap:8px">
+          <input type="checkbox" id="autoContinue-${index}" ${cfg.autoContinue?'checked':''} />
+          Auto-continue (+${CONTINUE_TOKENS} tokens cycles)
+        </label>
+      </div>
+
+      <div class="output-content" id="content-${index}">Ready to generate...</div>
+    `;
+    // Wire inputs → state + persist
+    ['name','model','reasoning','verbosity','maxtok','role','task','style','fileInst','useGlobal','autoContinue'].forEach(k=>{
+      const el = card.querySelector(getIdSel(k,index));
+      if(!el) return;
+      const evt = (el.tagName==='INPUT' && el.type==='checkbox') ? 'change' : (el.tagName==='INPUT'?'input':'input');
+      el.addEventListener(evt, ()=> saveBotField(index,k, el));
+    });
+
+    renderBotFiles(index);
+    return card;
+  }
+
+  function getIdSel(k,i){
+    const map = {
+      name: `#name-${i}`,
+      model: `#model-${i}`,
+      reasoning: `#reasoning-${i}`,
+      verbosity: `#verbosity-${i}`,
+      maxtok: `#maxtok-${i}`,
+      role: `#role-${i}`,
+      task: `#task-${i}`,
+      style: `#style-${i}`,
+      fileInst: `#fileInst-${i}`,
+      useGlobal: `#useGlobal-${i}`,
+      autoContinue: `#autoContinue-${i}`
+    };
+    return map[k];
+  }
+
+  function saveBotField(i,k,el){
+    const b = bots[i];
+    if (k==='useGlobal') b.useGlobalFiles = !!el.checked;
+    else if (k==='autoContinue') b.autoContinue = !!el.checked;
+    else if (k==='maxtok') b.maxtok = parseInt(el.value,10)||30;
+    else b[{name:'name',model:'model',reasoning:'reasoning',verbosity:'verbosity',role:'role',task:'task',style:'style',fileInst:'fileInstructions'}[k]] = el.value;
+    LS.set(BOT_KEY(i), b);
+  }
+
+  // Per-bot files
+  async function uploadBotFiles(i){
+    const input = document.getElementById(`botFileInput-${i}`);
+    if(!input.files || !input.files.length) return;
+    for (const file of input.files){
+      if(!/^text\/|markdown/.test(file.type) && !file.name.endsWith('.txt') && !file.name.endsWith('.md')){
+        showError(`Unsupported type: ${file.name}`); continue;
+      }
+      if (file.size > 500*1024) { showError(`Too large: ${file.name}`); continue; }
+      const key = await uploadToR2(file);
+      if (key){ bots[i].botFiles.push(key); LS.set(BOT_KEY(i), bots[i]); }
+    }
+    input.value=''; renderBotFiles(i);
+  }
+
+  function renderBotFiles(i){
+    const list = document.getElementById(`botFilesList-${i}`);
+    const files = bots[i].botFiles||[];
+    list.innerHTML = '';
+    if (!files.length){ list.innerHTML = '<small>No bot-specific files yet.</small>'; return; }
+    files.forEach((key, idx)=>{
+      const row = document.createElement('div');
+      row.className='file-row';
+      const name = key.split('/').pop();
+      row.innerHTML = `<div><strong>${name}</strong><span class="badge">bot</span><br><small>${key}</small></div>
+        <div>
+          <button class="link-btn" onclick="previewFile('${encodeURIComponent(key)}')">Preview</button>
+          <button class="link-btn" onclick="removeBotFile(${i},${idx})">Remove</button>
+        </div>`;
+      list.appendChild(row);
+    });
+  }
+  function removeBotFile(i, idx){
+    bots[i].botFiles.splice(idx,1); LS.set(BOT_KEY(i), bots[i]); renderBotFiles(i);
+  }
+
+  // -------- Generation flow (no hard-coded “continue” instructions) --------
+  async function generateOutputs(){
+    if (!apiKey){ showError('Please configure your API key first'); openApiKeyModal(); return; }
+    const prompt = document.getElementById('prompt').value.trim();
+    if (!prompt){ showError('Enter a prompt'); return; }
+
+    // Stop any pending timers
+    try{ continuationTimers.forEach((t,ix)=>{ if(t){ clearTimeout(t); continuationTimers[ix]=null; } }); }catch(_){}
+
+    // Show loading states
+    for (let i=0;i<9;i++){
+      const div = document.getElementById(`content-${i}`);
+      if (div){ div.textContent='Generating…'; div.classList.remove('error','success'); }
+    }
+
+    await Promise.all(bots.map((_,i)=> generateSingleOutput(i, apiKey, prompt)));
+  }
+
+  async function generateSingleOutput(i, apiKey, userPrompt){
+    const b = bots[i];
+    const contentDiv = document.getElementById(`content-${i}`);
+
+    try{
+      // Build inputs entirely from editable fields
+      const systemParts = [];
+      if (b.role) systemParts.push(`ROLE: ${b.role}`);
+      if (b.style) systemParts.push(`STYLE: ${b.style}`);
+      if (b.fileInstructions) systemParts.push(`FILE INSTRUCTIONS: ${b.fileInstructions}`);
+      if (b.useGlobalFiles && globalFileInstructions) systemParts.push(`GLOBAL FILE INSTRUCTIONS: ${globalFileInstructions}`);
+      const systemMessage = systemParts.join('\n');
+
+      const taskLine = b.task ? `TASK: ${b.task}` : '';
+      const mainUser = [taskLine, `PROMPT:\n${userPrompt}`].filter(Boolean).join('\n\n');
+
+      // Load file contents (text/markdown)
+      const allKeys = [
+        ...(b.useGlobalFiles ? globalFiles : []),
+        ...(b.botFiles||[])
+      ];
+      const filesText = await loadFilesText(allKeys, 8000); // ~8k chars cap
+      const filesChunk = filesText.length ? `\n\n=== FILES CONTEXT START ===\n${filesText}\n=== FILES CONTEXT END ===` : '';
+
+      const model = b.model;
+      const maxtok = parseInt(b.maxtok,10) || undefined;
+      const bodyForGpt5 = {
+        model,
+        input: [systemMessage, mainUser, filesChunk].filter(Boolean).join('\n\n'),
+        reasoning: { effort: b.reasoning },
+        text: { verbosity: b.verbosity }
+      };
+      if (maxtok) bodyForGpt5.max_output_tokens = maxtok;
+
+      // Call appropriate API
+      let outText = '';
+      if (model.startsWith('gpt-5')){
+        const r = await fetch('https://api.openai.com/v1/responses', {
+          method:'POST',
+          headers:{'Authorization':`Bearer ${apiKey}`,'Content-Type':'application/json'},
+          body: JSON.stringify(bodyForGpt5)
+        });
+        const raw = await r.text(); let data; try{ data=JSON.parse(raw);}catch{ data={output_text: raw}; }
+        if (!r.ok) throw new Error((data && data.error && data.error.message) || `HTTP ${r.status}`);
+        outText = extractTextFromResponse(data) || '';
+      } else {
+        const chatBody = {
+          model,
+          messages: [
+            {role:'system', content: systemMessage || 'You are a helpful assistant.'},
+            {role:'user', content: [mainUser, filesChunk].filter(Boolean).join('\n\n')}
+          ]
+        };
+        if (maxtok) chatBody.max_tokens = maxtok;
+        const r = await fetch('https://api.openai.com/v1/chat/completions', {
+          method:'POST',
+          headers:{'Authorization':`Bearer ${apiKey}`,'Content-Type':'application/json'},
+          body: JSON.stringify(chatBody)
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data?.error?.message || `HTTP ${r.status}`);
+        outText = data?.choices?.[0]?.message?.content || '';
+      }
+
+      outputs[i] = outText;
+      contentDiv.textContent = outText || '(no output)';
+      contentDiv.classList.add('success');
+
+      lastPrompts[i] = userPrompt;
+      if (b.autoContinue){ scheduleNextContinuation(i, apiKey, userPrompt); }
+    }catch(err){
+      contentDiv.textContent = `Error: ${err?.message || String(err)}`;
+      contentDiv.classList.add('error');
+    }
+  }
+
+  // Simple continuation loop (only if autoContinue is ON)
+  function scheduleNextContinuation(i, apiKey, basePrompt){
+    if (continuationTimers[i]) clearTimeout(continuationTimers[i]);
+    continuationTimers[i] = setTimeout(()=> generateContinuation(i, apiKey, basePrompt), 5000);
+  }
+  async function generateContinuation(i, apiKey, basePrompt){
+    if (!bots[i].autoContinue) return;
+    // Re-use all same parameters, but ask for a small follow-up (+CONTINUE_TOKENS)
+    const b = bots[i];
+    const contentDiv = document.getElementById(`content-${i}`);
+    try{
+      let text = '';
+      if (b.model.startsWith('gpt-5')){
+        const body = {
+          model: b.model,
+          input: `Continue (briefly) based on the previous answer:\n\n${outputs[i]}\n\nNEXT:`,
+          reasoning: { effort: b.reasoning },
+          text: { verbosity: b.verbosity },
+          max_output_tokens: CONTINUE_TOKENS
+        };
+        const r = await fetch('https://api.openai.com/v1/responses', {
+          method:'POST', headers:{'Authorization':`Bearer ${apiKey}`,'Content-Type':'application/json'},
+          body: JSON.stringify(body)
+        });
+        const raw = await r.text(); let data; try{ data=JSON.parse(raw);}catch{ data={output_text: raw}; }
+        if (!r.ok) throw new Error((data && data.error && data.error.message) || `HTTP ${r.status}`);
+        text = extractTextFromResponse(data)||'';
+      } else {
+        const chatBody = {
+          model: b.model,
+          messages: [{role:'user', content:`Continue (briefly) based on the previous answer:\n\n${outputs[i]}\n\nNEXT:`}],
+          max_tokens: CONTINUE_TOKENS
+        };
+        const r = await fetch('https://api.openai.com/v1/chat/completions', {
+          method:'POST', headers:{'Authorization':`Bearer ${apiKey}`,'Content-Type':'application/json'},
+          body: JSON.stringify(chatBody)
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data?.error?.message || `HTTP ${r.status}`);
+        text = data?.choices?.[0]?.message?.content || '';
+      }
+      outputs[i] = (outputs[i] ? outputs[i] + ' ' : '') + text;
+      contentDiv.textContent = outputs[i];
+      scheduleNextContinuation(i, apiKey, basePrompt);
+    }catch(e){
+      contentDiv.textContent = 'Continuation error: ' + (e?.message||String(e));
+      contentDiv.classList.add('error');
+    }
+  }
+
+  // -------- Helpers --------
+  async function loadFilesText(keys, totalCapChars){
+    if (!keys || !keys.length) return '';
+    const chunks = [];
+    let budget = totalCapChars||8000;
+    for (const key of keys){
+      try{
+        const r = await fetch('/api/file-url?key='+encodeURIComponent(key));
+        const j = await r.json();
+        const resp = await fetch(j.url);
+        const ct = resp.headers.get('content-type')||'';
+        if (!/text|markdown|plain|utf-8/i.test(ct)) continue;
+        const txt = (await resp.text())||'';
+        const take = txt.slice(0, Math.max(0,budget));
+        if (take){
+          const name = key.split('/').pop();
+          chunks.push(`FILE: ${name}\n${take}`);
+          budget -= take.length;
+          if (budget <= 0) break;
+        }
+      }catch(_){}
+    }
+    return chunks.join('\n\n');
+  }
+
+  function extractTextFromResponse(responseData){
+    try{
+      if (!responseData) return '';
+      if (responseData.output_text) return responseData.output_text;
+      if (responseData.completion) return responseData.completion;
+      if (Array.isArray(responseData.output)){
+        const msg = responseData.output.find(x=>x.type==='message');
+        if (msg && Array.isArray(msg.content)){
+          const t = msg.content.find(x=>x.type==='output_text');
+          if (t && t.text) return t.text;
+          return msg.content.map(x=>x.text||x.message||'').join('\n');
+        }
+      }
+      if (Array.isArray(responseData.choices)){
+        return responseData.choices[0]?.message?.content || responseData.choices[0]?.text || '';
+      }
+    }catch(_){}
+    return '';
+  }
+
+  function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+
+  // Debug toggle (minimal)
+  function toggleDebug(){ debugMode = !debugMode; toast(debugMode? 'Debug on':'Debug off'); }
   </script>
-  <!-- ===================== END BLOCK J: MAIN SCRIPT ================================ -->
+  <!-- ===================== END BLOCK I: SCRIPT ===================================== -->
 </body>
 </html>
