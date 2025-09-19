@@ -1,9 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- ===================== BEGIN BLOCK A: LOGIN GATE (Discord) ===================== -->
+  <!-- Hides the page, pings a protected endpoint; if 401 → send to Discord login. -->
+  <style id="login-gate-style">html{visibility:hidden}</style>
+  <script>
+  (async () => {
+    try {
+      const resp = await fetch('/api/upload-url', { credentials: 'include' });
+      if (resp.status === 401) {
+        // Not logged in → go to Discord login.
+        // (Callback currently sends you to "/", we can switch it to "/path/" next.)
+        location.href = '/api/auth/discord/start';
+        return;
+      }
+    } catch (e) {
+      // If the check fails for network reasons, still reveal the page so you can debug.
+    }
+    document.documentElement.style.visibility = 'visible';
+  })();
+  </script>
+  <!-- ===================== END BLOCK A: LOGIN GATE (Discord) ======================= -->
+
+  <!-- ===================== BEGIN BLOCK B: BASE PAGE METADATA ======================= -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PATH v0.25 - Parallel Adaptive Text Helper</title>
+  <!-- ===================== END BLOCK B: BASE PAGE METADATA ========================= -->
+
+  <!-- ===================== BEGIN BLOCK C: STYLES =================================== -->
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:20px}
@@ -57,7 +82,7 @@
     .outputs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(450px,1fr));gap:20px;margin-top:30px}
     .output-card{background:#fff;border:2px solid #e0e0e0;border-radius:12px;padding:20px;position:relative;transition:transform .2s,box-shadow .2s,border-color .2s}
     .output-card:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(0,0,0,.1)}
-.num-badge{position:absolute;top:10px;left:12px;font-size:12px;color:#9aa2b1;font-weight:600;user-select:none;pointer-events:none;}
+    .num-badge{position:absolute;top:10px;left:12px;font-size:12px;color:#9aa2b1;font-weight:600;user-select:none;pointer-events:none;}
     .output-content{background:#f8f9fa;padding:15px;border-radius:8px;min-height:150px;max-height:300px;overflow-y:auto;white-space:pre-wrap;font-family:'Monaco','Menlo',monospace;font-size:14px;line-height:1.5;cursor:pointer;transition:background .2s,transform .2s;position:relative}
     .output-content:hover{background:#e8f5e9;transform:scale(1.01)}
     .output-content.clicked{animation:clickPulse .5s}
@@ -83,32 +108,46 @@
     .toast{position:fixed;bottom:30px;right:30px;background:#4CAF50;color:#fff;padding:15px 20px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.15);opacity:0;transform:translateY(20px);transition:all .3s;z-index:1001}
     .toast.show{opacity:1;transform:translateY(0)}
   </style>
+  <!-- ===================== END BLOCK C: STYLES ===================================== -->
 </head>
 <body>
+  <!-- ===================== BEGIN BLOCK D: PAGE HEADER + TOP ACTIONS ================= -->
   <div class="container">
     <div class="header">
       <div class="title-section">
         <h1>PATH</h1>
         <span class="subtitle">Parallel Adaptive Text Helper</span>
       </div>
-      <div class="top-actions"><button class="link-btn" id="apiKeyBtn" onclick="openApiKeyModal()" title="API Key">🔐 API</button><button class="link-btn" onclick="toggleDebug()" title="Debug">🛠 Debug</button><button class="link-btn" id="pauseAllBtn" onclick="togglePauseAll()" title="Pause/Resume all">⏸ All</button><input id="delaySec" type="number" min="0" step="0.1" value="5" title="sec. delay" style="width:70px;margin-left:6px;padding:4px 6px;border:1px solid #e0e0e0;border-radius:6px;font-size:12px" onchange="saveDelaySec()" oninput="saveDelaySec()" /><span class="version">v0.25_no_repeat</span></div>
+      <div class="top-actions">
+        <button class="link-btn" id="apiKeyBtn" onclick="openApiKeyModal()" title="API Key">🔐 API</button>
+        <button class="link-btn" onclick="toggleDebug()" title="Debug">🛠 Debug</button>
+        <button class="link-btn" id="pauseAllBtn" onclick="togglePauseAll()" title="Pause/Resume all">⏸ All</button>
+        <input id="delaySec" type="number" min="0" step="0.1" value="5" title="sec. delay" style="width:70px;margin-left:6px;padding:4px 6px;border:1px solid #e0e0e0;border-radius:6px;font-size:12px" onchange="saveDelaySec()" oninput="saveDelaySec()" />
+        <span class="version">v0.25_no_repeat</span>
+      </div>
     </div>
+  <!-- ===================== END BLOCK D: PAGE HEADER + TOP ACTIONS =================== -->
 
+  <!-- ===================== BEGIN BLOCK E: DEBUG PANEL ============================== -->
     <div class="debug-panel" id="debugPanel"></div>
+  <!-- ===================== END BLOCK E: DEBUG PANEL ================================ -->
 
+  <!-- ===================== BEGIN BLOCK F: INPUT SECTION ============================ -->
     <div class="input-section">
       <div class="input-group">
         <label for="prompt" class="sr-only">Enter text</label>
         <textarea id="prompt" placeholder="Enter text…&#10;Press Enter to generate…"></textarea>
       </div>
-      
       <div class="error-message" id="errorMessage"></div>
     </div>
+  <!-- ===================== END BLOCK F: INPUT SECTION ============================== -->
 
+  <!-- ===================== BEGIN BLOCK G: OUTPUTS GRID ============================= -->
     <div class="outputs-grid" id="outputsGrid"></div>
   </div>
+  <!-- ===================== END BLOCK G: OUTPUTS GRID =============================== -->
 
-  <!-- API Key Modal -->
+  <!-- ===================== BEGIN BLOCK H: API KEY MODAL ============================ -->
   <div id="apiKeyModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
@@ -125,27 +164,28 @@
       </div>
     </div>
   </div>
+  <!-- ===================== END BLOCK H: API KEY MODAL ============================== -->
 
-  <!-- Toast Notification -->
+  <!-- ===================== BEGIN BLOCK I: TOAST ==================================== -->
   <div id="toast" class="toast">Text appended to prompt!</div>
+  <!-- ===================== END BLOCK I: TOAST ====================================== -->
 
+  <!-- ===================== BEGIN BLOCK J: MAIN SCRIPT ============================== -->
   <script>
     let outputs = Array(9).fill('');
     let debugMode = false;
     let apiKey = localStorage.getItem('path_api_key') || '';
 
-// Global pause state and per-output abort controllers
-let globalPaused = false;
-let abortControllers = Array(9).fill(null);
-// Timers for continued blocks
-let continuationTimers = Array(9).fill(null);
-// Remember the original prompt used for each output
-let lastPrompts = Array(9).fill('');
-// Continuation settings
-let CONTINUE_DELAY_MS = 5000; // default 5 seconds (overridden by input)
-const CONTINUE_TOKENS = 30;     // fixed +30 tokens each cycle
-
-
+    // Global pause state and per-output abort controllers
+    let globalPaused = false;
+    let abortControllers = Array(9).fill(null);
+    // Timers for continued blocks
+    let continuationTimers = Array(9).fill(null);
+    // Remember the original prompt used for each output
+    let lastPrompts = Array(9).fill('');
+    // Continuation settings
+    let CONTINUE_DELAY_MS = 5000; // default 5 seconds (overridden by input)
+    const CONTINUE_TOKENS = 30;     // fixed +30 tokens each cycle
 
     // Default configurations per card (models vary for exploration)
     const defaultConfigs = [
@@ -164,10 +204,8 @@ const CONTINUE_TOKENS = 30;     // fixed +30 tokens each cycle
     function getModelDefaults(model){
       const m = (model || '').toLowerCase();
       if (m.startsWith('gpt-5')) {
-        // GPT-5 uses reasoning tokens; keep minimal & terse to ensure space for a message under small caps
         return { reasoning:'minimal', verbosity:'low', maxtok:30 };
       }
-      // Chat Completions (GPT-4/3.5)
       return { reasoning:'medium', verbosity:'medium', maxtok:30 };
     }
     function applyModelDefaults(index, model, fromChange){
@@ -214,76 +252,69 @@ const CONTINUE_TOKENS = 30;     // fixed +30 tokens each cycle
     function addDebugLog(message){if(debugMode){const p=document.getElementById('debugPanel');const ts=new Date().toISOString().substr(11,8);p.innerHTML+=`[${ts}] ${message}\n`;p.scrollTop=p.scrollHeight;}}
     function showToast(message){const t=document.getElementById('toast');t.textContent=message;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
 
-function getContinueDelayMs(){
-  const el = document.getElementById('delaySec');
-  const v = parseFloat(el?.value);
-  return (Number.isFinite(v) && v >= 0) ? Math.round(v * 1000) : 5000;
-}
-function saveDelaySec(){
-  const el = document.getElementById('delaySec');
-  if (!el) return;
-  localStorage.setItem('path_delay_sec', el.value);
-  CONTINUE_DELAY_MS = getContinueDelayMs();
-  addDebugLog(`Delay set to ${el.value}s`);
-}
-// Load saved delay on startup
-document.addEventListener('DOMContentLoaded', ()=>{
-  const el = document.getElementById('delaySec');
-  const saved = localStorage.getItem('path_delay_sec');
-  if (el && saved !== null){ el.value = saved; }
-  CONTINUE_DELAY_MS = getContinueDelayMs();
-});
-
-function extractTextFromResponse(responseData){
-  try{
-    if (!responseData) return '';
-    if (responseData.output_text) return responseData.output_text;
-    if (responseData.completion) return responseData.completion;
-    if (Array.isArray(responseData.output)){
-      const msg = responseData.output.find(x=>x.type==='message');
-      if (msg && Array.isArray(msg.content)){
-        const t = msg.content.find(x=>x.type==='output_text');
-        if (t && t.text) return t.text;
-        return msg.content.map(x=>x.text||x.message||'').join('\n');
-      }
+    function getContinueDelayMs(){
+      const el = document.getElementById('delaySec');
+      const v = parseFloat(el?.value);
+      return (Number.isFinite(v) && v >= 0) ? Math.round(v * 1000) : 5000;
     }
-    if (Array.isArray(responseData.choices)){
-      return responseData.choices[0]?.message?.content || responseData.choices[0]?.text || '';
+    function saveDelaySec(){
+      const el = document.getElementById('delaySec');
+      if (!el) return;
+      localStorage.setItem('path_delay_sec', el.value);
+      CONTINUE_DELAY_MS = getContinueDelayMs();
+      addDebugLog(`Delay set to ${el.value}s`);
     }
-  }catch(e){}
-  return '';
-}
+    document.addEventListener('DOMContentLoaded', ()=>{
+      const el = document.getElementById('delaySec');
+      const saved = localStorage.getItem('path_delay_sec');
+      if (el && saved !== null){ el.value = saved; }
+      CONTINUE_DELAY_MS = getContinueDelayMs();
+    });
 
-
-// Toggle global pause/resume. Pausing aborts all in-flight requests.
-function togglePauseAll(){
-  // Always clear all pending timers when toggling
-  try{ continuationTimers.forEach((t,i)=>{ if (t){ clearTimeout(t); continuationTimers[i]=null; } }); }catch(e){}
-  const btn = document.getElementById('pauseAllBtn');
-  if (!globalPaused){
-    globalPaused = true;
-    // Abort all in-flight requests
-    abortControllers.forEach((ctl, i)=>{ try{
-        let controller = null; ctl && ctl.abort(); }catch(e){} });
-    if (btn){ btn.textContent = '▶ All'; btn.title = 'Resume all'; }
-    addDebugLog('Global pause engaged: aborted all active requests.');
-    showToast('Paused all outputs');
-  } else {
-    globalPaused = false;
-    if (btn){ btn.textContent = '⏸ All'; btn.title = 'Pause all'; }
-    addDebugLog('Global pause disabled.');
-    showToast('Resumed');
-    // Re-schedule continuations for already-started outputs
-    try{
-      for (let i=0;i<outputs.length;i++){
-        if (outputs[i] && lastPrompts[i] && !continuationTimers[i]){
-          scheduleNextContinuation(i, apiKey, lastPrompts[i]);
+    function extractTextFromResponse(responseData){
+      try{
+        if (!responseData) return '';
+        if (responseData.output_text) return responseData.output_text;
+        if (responseData.completion) return responseData.completion;
+        if (Array.isArray(responseData.output)){
+          const msg = responseData.output.find(x=>x.type==='message');
+          if (msg && Array.isArray(msg.content)){
+            const t = msg.content.find(x=>x.type==='output_text');
+            if (t && t.text) return t.text;
+            return msg.content.map(x=>x.text||x.message||'').join('\n');
+          }
         }
-      }
-    }catch(e){}
-  }
-}
+        if (Array.isArray(responseData.choices)){
+          return responseData.choices[0]?.message?.content || responseData.choices[0]?.text || '';
+        }
+      }catch(e){}
+      return '';
+    }
 
+    // Toggle global pause/resume. Pausing aborts all in-flight requests.
+    function togglePauseAll(){
+      try{ continuationTimers.forEach((t,i)=>{ if (t){ clearTimeout(t); continuationTimers[i]=null; } }); }catch(e){}
+      const btn = document.getElementById('pauseAllBtn');
+      if (!globalPaused){
+        globalPaused = true;
+        abortControllers.forEach((ctl)=>{ try{ ctl && ctl.abort(); }catch(e){} });
+        if (btn){ btn.textContent = '▶ All'; btn.title = 'Resume all'; }
+        addDebugLog('Global pause engaged: aborted all active requests.');
+        showToast('Paused all outputs');
+      } else {
+        globalPaused = false;
+        if (btn){ btn.textContent = '⏸ All'; btn.title = 'Pause all'; }
+        addDebugLog('Global pause disabled.');
+        showToast('Resumed');
+        try{
+          for (let i=0;i<outputs.length;i++){
+            if (outputs[i] && lastPrompts[i] && !continuationTimers[i]){
+              scheduleNextContinuation(i, apiKey, lastPrompts[i]);
+            }
+          }
+        }catch(e){}
+      }
+    }
 
     // Collapsible settings: summary + toggle
     function getVarSummary(index){
@@ -308,14 +339,12 @@ function togglePauseAll(){
       else { s.classList.add('collapsed'); b.classList.remove('open'); }
     }
 
-    // Initialize output cards (with always-visible settings)
     function initializeOutputCards(){
       const grid=document.getElementById('outputsGrid');
       grid.innerHTML='';
       for (let i=0;i<9;i++){
         const card=createOutputCard(i);
         grid.appendChild(card);
-        // Apply model-based defaults on load
         const modelSel=document.getElementById(`model-${i}`);
         if(modelSel) applyModelDefaults(i, modelSel.value, false);
         updateVarSummary(i);
@@ -328,11 +357,11 @@ function togglePauseAll(){
       card.className='output-card';
       card.id=`output-${index}`;
       card.innerHTML=`
-        <div class=\"num-badge\">${index+1}.</div>
+        <div class="num-badge">${index+1}.</div>
         <button class="refresh-btn" id="refresh-${index}" onclick="refreshOutput(${index})" title="Regenerate this output">↻</button>
         <div class="output-content" id="content-${index}" onclick="appendOutput(${index})">Ready to generate...</div>
-        <div class=\"vars-bar\" id=\"varsbar-${index}\" onclick=\"toggleVars(${index})\"><span class=\"chev\">▸</span><span id=\"varssum-${index}\"></span></div>
-        <div class=\"output-settings collapsed\" id=\"settings-${index}\">
+        <div class="vars-bar" id="varsbar-${index}" onclick="toggleVars(${index})"><span class="chev">▸</span><span id="varssum-${index}"></span></div>
+        <div class="output-settings collapsed" id="settings-${index}">
           <div class="settings-grid">
             <div class="setting-group">
               <label class="setting-label">Model</label>
@@ -375,8 +404,6 @@ function togglePauseAll(){
             </div>
           </div>
         </div>`;
-
-      // When model changes, reset this card's controls to the model defaults (user can still override after)
       const modelSel = card.querySelector(`#model-${index}`);
       const rSel = card.querySelector(`#reasoning-${index}`);
       const vSel = card.querySelector(`#verbosity-${index}`);
@@ -391,77 +418,72 @@ function togglePauseAll(){
       return card;
     }
 
-    
-// Schedule the next +30-token continuation for this output after 5s
-function scheduleNextContinuation(index, apiKey, basePrompt){
-  if (globalPaused) return;
-  // clear any existing timer first
-  if (continuationTimers[index]){ clearTimeout(continuationTimers[index]); continuationTimers[index]=null; }
-  const _delay = getContinueDelayMs();
-  continuationTimers[index] = setTimeout(()=>{
-    continuationTimers[index]=null;
-    if (!globalPaused){ generateContinuation(index, apiKey, basePrompt, CONTINUE_TOKENS); }
-  }, _delay);
-  addDebugLog(`Output ${index+1}: scheduled next +${CONTINUE_TOKENS} tokens in ${(_delay/1000)}s`);
-}
+    function scheduleNextContinuation(index, apiKey, basePrompt){
+      if (globalPaused) return;
+      if (continuationTimers[index]){ clearTimeout(continuationTimers[index]); continuationTimers[index]=null; }
+      const _delay = getContinueDelayMs();
+      continuationTimers[index] = setTimeout(()=>{
+        continuationTimers[index]=null;
+        if (!globalPaused){ generateContinuation(index, apiKey, basePrompt, CONTINUE_TOKENS); }
+      }, _delay);
+      addDebugLog(`Output ${index+1}: scheduled next +${CONTINUE_TOKENS} tokens in ${(_delay/1000)}s`);
+    }
 
-// Append continuation that starts exactly where previous text ended
-async function generateContinuation(index, apiKey, basePrompt, extraTokens){
-  if (globalPaused){ addDebugLog(`Output ${index+1}: continuation canceled (paused)`); return; }
-  const model=document.getElementById(`model-${index}`).value;
-  const reasoning=document.getElementById(`reasoning-${index}`).value;
-  const verbosity=document.getElementById(`verbosity-${index}`).value;
-  const style=document.getElementById(`style-${index}`).value;
-  const contentDiv=document.getElementById(`content-${index}`);
-  const already = outputs[index] || '';
-  try{
-    let controller = new AbortController(); abortControllers[index] = controller;
-    const isGPT5Model = model.startsWith('gpt-5');
-    if (isGPT5Model){
-      const instruction = `${style?style+'\n\n':''}Continue the writing from where ALREADY_WRITTEN ends. Do NOT repeat earlier words.\n\nORIGINAL_TEXT:\n${basePrompt}\n\nALREADY_WRITTEN:\n${already}\n\nNEXT:`;
-      const body = { model, input: instruction, reasoning:{effort:reasoning}, text:{verbosity}, max_output_tokens: extraTokens };
-      const response = await fetch('https://api.openai.com/v1/responses', { method:'POST', headers:{'Authorization':`Bearer ${apiKey}`,'Content-Type':'application/json'}, body: JSON.stringify(body), signal: controller.signal });
-      const raw = await response.text(); let data; try{ data=JSON.parse(raw);}catch(e){ data={output_text:raw}; }
-      if (!response.ok){ throw new Error((data && data.error && data.error.message) || `HTTP ${response.status}`); }
-      const chunk = (extractTextFromResponse(data)||'').trim();
-      const joiner = already.trim()? ' // ' : '';
-      outputs[index] = (already + joiner + chunk).trim();
-      contentDiv.textContent = outputs[index];
-      addDebugLog(`Output ${index+1}: appended +${extraTokens} tokens (responses API)`);
-    } else {
-      let systemMessage = `Continue the user's text exactly from where it left off. Avoid repeating prior words. ${style||''}`;
-      if (verbosity==='low') systemMessage += ' Keep it brief.';
-      else if (verbosity==='high') systemMessage += ' Add a bit more detail.';
-      const userPrompt = `ORIGINAL_TEXT:\n${basePrompt}\n\nALREADY_WRITTEN:\n${already}\n\nContinue from the last word above:`;
-      const chatBody = { model, messages:[{role:'system',content:systemMessage},{role:'user',content:userPrompt}], max_tokens: extraTokens };
-      const resp = await fetch('https://api.openai.com/v1/chat/completions', { method:'POST', headers:{'Authorization':`Bearer ${apiKey}`,'Content-Type':'application/json'}, body: JSON.stringify(chatBody), signal: controller.signal });
-      const raw = await resp.text(); let data; try{ data=JSON.parse(raw);}catch(e){ data={output_text:raw}; }
-      if (!resp.ok){ throw new Error((data && data.error && data.error.message) || `HTTP ${resp.status}`); }
-      const chunk = (extractTextFromResponse(data)||'').trim();
-      const joiner = already.trim()? ' // ' : '';
-      outputs[index] = (already + joiner + chunk).trim();
-      contentDiv.textContent = outputs[index];
-      addDebugLog(`Output ${index+1}: appended +${extraTokens} tokens (chat API)`);
+    async function generateContinuation(index, apiKey, basePrompt, extraTokens){
+      if (globalPaused){ addDebugLog(`Output ${index+1}: continuation canceled (paused)`); return; }
+      const model=document.getElementById(`model-${index}`).value;
+      const reasoning=document.getElementById(`reasoning-${index}`).value;
+      const verbosity=document.getElementById(`verbosity-${index}`).value;
+      const style=document.getElementById(`style-${index}`).value;
+      const contentDiv=document.getElementById(`content-${index}`);
+      const already = outputs[index] || '';
+      try{
+        let controller = new AbortController(); abortControllers[index] = controller;
+        const isGPT5Model = model.startsWith('gpt-5');
+        if (isGPT5Model){
+          const instruction = `${style?style+'\n\n':''}Continue the writing from where ALREADY_WRITTEN ends. Do NOT repeat earlier words.\n\nORIGINAL_TEXT:\n${basePrompt}\n\nALREADY_WRITTEN:\n${already}\n\nNEXT:`;
+          const body = { model, input: instruction, reasoning:{effort:reasoning}, text:{verbosity}, max_output_tokens: extraTokens };
+          const response = await fetch('https://api.openai.com/v1/responses', { method:'POST', headers:{'Authorization':`Bearer ${apiKey}`,'Content-Type':'application/json'}, body: JSON.stringify(body), signal: controller.signal });
+          const raw = await response.text(); let data; try{ data=JSON.parse(raw);}catch(e){ data={output_text:raw}; }
+          if (!response.ok){ throw new Error((data && data.error && data.error.message) || `HTTP ${response.status}`); }
+          const chunk = (extractTextFromResponse(data)||'').trim();
+          const joiner = already.trim()? ' // ' : '';
+          outputs[index] = (already + joiner + chunk).trim();
+          contentDiv.textContent = outputs[index];
+          addDebugLog(`Output ${index+1}: appended +${extraTokens} tokens (responses API)`);
+        } else {
+          let systemMessage = `Continue the user's text exactly from where it left off. Avoid repeating prior words. ${style||''}`;
+          if (verbosity==='low') systemMessage += ' Keep it brief.';
+          else if (verbosity==='high') systemMessage += ' Add a bit more detail.';
+          const userPrompt = `ORIGINAL_TEXT:\n${basePrompt}\n\nALREADY_WRITTEN:\n${already}\n\nContinue from the last word above:`;
+          const chatBody = { model, messages:[{role:'system',content:systemMessage},{role:'user',content:userPrompt}], max_tokens: extraTokens };
+          const resp = await fetch('https://api.openai.com/v1/chat/completions', { method:'POST', headers:{'Authorization':`Bearer ${apiKey}`,'Content-Type':'application/json'}, body: JSON.stringify(chatBody), signal: controller.signal });
+          const raw = await resp.text(); let data; try{ data=JSON.parse(raw);}catch(e){ data={output_text:raw}; }
+          if (!resp.ok){ throw new Error((data && data.error && data.error.message) || `HTTP ${resp.status}`); }
+          const chunk = (extractTextFromResponse(data)||'').trim();
+          const joiner = already.trim()? ' // ' : '';
+          outputs[index] = (already + joiner + chunk).trim();
+          contentDiv.textContent = outputs[index];
+          addDebugLog(`Output ${index+1}: appended +${extraTokens} tokens (chat API)`);
+        }
+        abortControllers[index] = null;
+        if (!globalPaused){ scheduleNextContinuation(index, apiKey, basePrompt); }
+      }catch(err){
+        const msg = String(err && (err.message||err)) || '';
+        if (msg.toLowerCase().includes('abort')){
+          addDebugLog(`Output ${index+1}: continuation aborted`);
+          abortControllers[index] = null;
+          return;
+        }
+        contentDiv.classList.add('error'); contentDiv.textContent = 'Continuation error: ' + msg;
+        addDebugLog(`Output ${index+1}: continuation error -> ${msg}`);
+        abortControllers[index] = null;
+      }
     }
-    abortControllers[index] = null;
-    // keep the loop going
-    if (!globalPaused){ scheduleNextContinuation(index, apiKey, basePrompt); }
-  }catch(err){
-    const msg = String(err && (err.message||err)) || '';
-    if (msg.toLowerCase().includes('abort')){
-      addDebugLog(`Output ${index+1}: continuation aborted`);
-      abortControllers[index] = null;
-      return;
-    }
-    contentDiv.classList.add('error'); contentDiv.textContent = 'Continuation error: ' + msg;
-    addDebugLog(`Output ${index+1}: continuation error -> ${msg}`);
-    abortControllers[index] = null;
-  }
-}
-function appendOutput(index){
+
+    function appendOutput(index){
       if (outputs[index] && !outputs[index].startsWith('Ready to generate') && !outputs[index].startsWith('Error')){
         const prompt=document.getElementById('prompt');
-        // Changed from \n\n to // for separation
         const separator = prompt.value.trim() ? ' // ' : '';
         prompt.value += separator + outputs[index];
         prompt.scrollTop=prompt.scrollHeight;
@@ -472,10 +494,8 @@ function appendOutput(index){
       }
     }
 
-    // New function to refresh a single output
     async function refreshOutput(index){
-      if (globalPaused){ 
-        // Auto-unpause when refreshing
+      if (globalPaused){
         globalPaused = false;
         const btn = document.getElementById('pauseAllBtn');
         if (btn){ btn.textContent = '⏸ All'; btn.title = 'Pause all'; }
@@ -487,25 +507,19 @@ function appendOutput(index){
 
       const refreshBtn = document.getElementById(`refresh-${index}`);
       const contentDiv = document.getElementById(`content-${index}`);
-      
       refreshBtn.classList.add('spinning');
       contentDiv.textContent='Regenerating...';
       if (continuationTimers[index]){ clearTimeout(continuationTimers[index]); continuationTimers[index]=null; }
       contentDiv.classList.remove('error','success');
-      
       addDebugLog(`Regenerating output ${index + 1}...`);
-      
       await generateSingleOutput(index, apiKey, prompt);
-      
       refreshBtn.classList.remove('spinning');
       addDebugLog(`Output ${index + 1} regeneration complete`);
     }
 
     async function generateOutputs(){
       try{ continuationTimers.forEach((t,i)=>{ if (t){ clearTimeout(t); continuationTimers[i]=null; } }); }catch(e){}
-
-      // Auto-unpause when Enter is pressed
-      if (globalPaused){ 
+      if (globalPaused){
         globalPaused = false;
         const btn = document.getElementById('pauseAllBtn');
         if (btn){ btn.textContent = '⏸ All'; btn.title = 'Pause all'; }
@@ -550,7 +564,6 @@ function appendOutput(index){
       try{
         let controller = null;
         addDebugLog(`Output ${index+1}: Starting with model=${model}, reasoning=${reasoning}, verbosity=${verbosity}, max_tokens=${(parseInt(document.getElementById(`maxtok-${index}`)?.value,10)||'auto')}`);
-        // Strong anti-repetition instruction with clear example
         const instruction = `You must continue the text below starting EXACTLY after the last word. Do NOT repeat ANY words from the original text.
 
 Example:
@@ -574,13 +587,11 @@ YOUR CONTINUATION (start immediately with new words):`;
           controller = new AbortController(); abortControllers[index] = controller;
           const response = await fetch('https://api.openai.com/v1/responses', { method:'POST', headers:{'Authorization':`Bearer ${apiKey}`,'Content-Type':'application/json'}, body: JSON.stringify(requestBody), signal: controller.signal });
           let responseData; const responseText = await response.text();
-          try{
-        let controller = null; responseData = JSON.parse(responseText);} catch(e){ responseData = responseText; }
+          try{ responseData = JSON.parse(responseText);} catch(e){ responseData = responseText; }
           addDebugLog(`Output ${index+1}: Raw response: ${typeof responseData==='string'?responseData:JSON.stringify(responseData)}`);
           if (!response.ok) throw new Error(`GPT-5 API not available. Falling back to GPT-4.`);
           handleSuccessfulResponse(responseData, index, contentDiv);
           lastPrompts[index] = prompt;
-          // start the continuation loop
           scheduleNextContinuation(index, apiKey, prompt);
           abortControllers[index] = null;
         } else {
@@ -612,7 +623,6 @@ YOUR CONTINUATION (start immediately with new words):`;
           abortControllers[index] = null;
         }
       } catch(error){
-        // If aborted due to global pause, show paused state and skip fallbacks
         if ((error && (error.name === 'AbortError' || String(error.message||'').toLowerCase().includes('abort'))) ){
           const contentDiv=document.getElementById(`content-${index}`);
           contentDiv.textContent = '⏸ Paused';
@@ -629,21 +639,17 @@ YOUR CONTINUATION (start immediately with new words):`;
           if (model==='gpt-5-mini') fallbackModel='gpt-4';
           if (model==='gpt-5-nano') fallbackModel='gpt-3.5-turbo';
           try{
-        let controller = null;
             const systemMessage = 'You are a text continuation assistant. Continue the given text seamlessly without repeating any part of it.' + (style ? ` ${style}` : '');
             const userPrompt = `Continue this text (do not repeat it):\n\n${prompt}`;
             const chatBody = { model: fallbackModel, messages:[{role:'system',content:systemMessage},{role:'user',content:userPrompt}] };
             if (maxTokens) chatBody.max_tokens = maxTokens;
-            controller = new AbortController(); abortControllers[index] = controller;
-          const chatResponse = await fetch('https://api.openai.com/v1/chat/completions', { method:'POST', headers:{'Authorization':`Bearer ${apiKey}`,'Content-Type':'application/json'}, body: JSON.stringify(chatBody), signal: controller.signal });
+            const chatResponse = await fetch('https://api.openai.com/v1/chat/completions', { method:'POST', headers:{'Authorization':`Bearer ${apiKey}`,'Content-Type':'application/json'}, body: JSON.stringify(chatBody) });
             const chatData = await chatResponse.json();
             if (chatResponse.ok){
               const output = chatData.choices?.[0]?.message?.content || 'No output received';
               outputs[index]=output; contentDiv.textContent=output; contentDiv.classList.add('success');
-          lastPrompts[index] = prompt;
-          scheduleNextContinuation(index, apiKey, prompt);
-          abortControllers[index] = null;
-              addDebugLog(`Output ${index+1}: Fallback to ${fallbackModel} succeeded`);
+              lastPrompts[index] = prompt;
+              scheduleNextContinuation(index, apiKey, prompt);
             } else { throw new Error(chatData.error?.message || 'API Error'); }
           } catch(fallbackError){
             contentDiv.textContent = `Error: ${fallbackError.message}`; contentDiv.classList.add('error');
@@ -682,11 +688,10 @@ YOUR CONTINUATION (start immediately with new words):`;
       else if (responseData.result){ output = typeof responseData.result==='string'? responseData.result : JSON.stringify(responseData.result,null,2); }
       else if (responseData.completion){ output = typeof responseData.completion==='string'? responseData.completion : JSON.stringify(responseData.completion,null,2); }
       else { output = `Unexpected response format:\n${JSON.stringify(responseData,null,2)}`; }
-      if (output.toString().includes('[object Object]')) output = JSON.stringify(responseData,null,2);
       outputs[index]=output; contentDiv.textContent=output; contentDiv.classList.add('success');
-          lastPrompts[index] = prompt;
-          scheduleNextContinuation(index, apiKey, prompt);
-          abortControllers[index] = null;
+      lastPrompts[index] = prompt;
+      scheduleNextContinuation(index, apiKey, prompt);
+      abortControllers[index] = null;
     }
 
     function showError(message){
@@ -696,73 +701,65 @@ YOUR CONTINUATION (start immediately with new words):`;
     }
 
     window.addEventListener('keydown', (e)=>{ if (e.key==='Escape') closeApiKeyModal(); });
-  
-// Global numeric hotkeys: 1..9 append that card's output into the main textbox
-function handleNumberHotkeys(e){
-  // Ignore when typing in non-prompt inputs
-  const ae = document.activeElement;
-  const tag = (ae && ae.tagName) ? ae.tagName.toLowerCase() : '';
-  const isInPrompt = (tag === 'textarea' && ae.id === 'prompt');
-  const isOtherInput = (tag === 'input' || (tag === 'textarea' && !isInPrompt) || (ae && ae.isContentEditable));
-  if (isOtherInput) return; // don't steal numbers when editing settings / API key, etc.
 
-  // Accept plain number keys 1..9 (no ctrl/cmd/alt), or Shift+digit is fine too
-  if (e.ctrlKey || e.metaKey || e.altKey) return;
-  const k = e.key;
-  if (k >= '1' && k <= '9'){
-    const idx = parseInt(k, 10) - 1;
-    if (idx >= 0 && idx < 9){
-      // Prevent inserting '1' into the prompt when focused there
-      e.preventDefault();
-      appendOutput(idx);
-      showToast(`Appended output ${idx+1}`);
-    }
-  }
-}
-document.addEventListener('keydown', handleNumberHotkeys);
-
-// ---- Persistence of per-card variable settings ----
-const VAR_KEYS = ['model','reasoning','verbosity','style','maxtok'];
-function cardKey(i,k){ return `path_card_${i}_${k}`; }
-
-function loadCardSettings(index){
-  try{
-    VAR_KEYS.forEach(k=>{
-      const el = document.getElementById(`${k}-${index}`);
-      if (!el) return;
-      const saved = localStorage.getItem(cardKey(index,k));
-      if (saved !== null){
-        el.value = saved;
+    // Global numeric hotkeys: 1..9 append that card's output into the main textbox
+    function handleNumberHotkeys(e){
+      const ae = document.activeElement;
+      const tag = (ae && ae.tagName) ? ae.tagName.toLowerCase() : '';
+      const isInPrompt = (tag === 'textarea' && ae.id === 'prompt');
+      const isOtherInput = (tag === 'input' || (tag === 'textarea' && !isInPrompt) || (ae && ae.isContentEditable));
+      if (isOtherInput) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const k = e.key;
+      if (k >= '1' && k <= '9'){
+        const idx = parseInt(k, 10) - 1;
+        if (idx >= 0 && idx < 9){
+          e.preventDefault();
+          appendOutput(idx);
+          showToast(`Appended output ${idx+1}`);
+        }
       }
+    }
+    document.addEventListener('keydown', handleNumberHotkeys);
+
+    // ---- Persistence of per-card variable settings ----
+    const VAR_KEYS = ['model','reasoning','verbosity','style','maxtok'];
+    function cardKey(i,k){ return `path_card_${i}_${k}`; }
+
+    function loadCardSettings(index){
+      try{
+        VAR_KEYS.forEach(k=>{
+          const el = document.getElementById(`${k}-${index}`);
+          if (!el) return;
+          const saved = localStorage.getItem(cardKey(index,k));
+          if (saved !== null){
+            el.value = saved;
+          }
+        });
+        if (typeof updateVarSummary === 'function'){ updateVarSummary(index); }
+      }catch(e){ addDebugLog && addDebugLog(`Settings load error [${index}]: ${e}`); }
+    }
+
+    function handleSettingEvent(e){
+      const t = e && e.target; if (!t || !t.id) return;
+      const m = t.id.match(/^(model|reasoning|verbosity|style|maxtok)-(\d+)$/);
+      if (!m) return;
+      const key = m[1]; const index = parseInt(m[2],10);
+      try{
+        localStorage.setItem(cardKey(index,key), t.value);
+      }catch(e){ addDebugLog && addDebugLog(`Settings save error [${index}/${key}]: ${e}`); }
+      if (typeof updateVarSummary === 'function'){ updateVarSummary(index); }
+    }
+
+    document.addEventListener('change', handleSettingEvent);
+    document.addEventListener('input', handleSettingEvent);
+
+    document.addEventListener('DOMContentLoaded', ()=>{
+      try{
+        for (let i=0;i<9;i++){ loadCardSettings(i); }
+      }catch(e){ addDebugLog && addDebugLog('Initial settings load failed: '+e); }
     });
-    // refresh the small summary line if available
-    if (typeof updateVarSummary === 'function'){ updateVarSummary(index); }
-  }catch(e){ addDebugLog && addDebugLog(`Settings load error [${index}]: ${e}`); }
-}
-
-function handleSettingEvent(e){
-  const t = e && e.target; if (!t || !t.id) return;
-  const m = t.id.match(/^(model|reasoning|verbosity|style|maxtok)-(\d+)$/);
-  if (!m) return;
-  const key = m[1]; const index = parseInt(m[2],10);
-  try{
-    localStorage.setItem(cardKey(index,key), t.value);
-  }catch(e){ addDebugLog && addDebugLog(`Settings save error [${index}/${key}]: ${e}`); }
-  if (typeof updateVarSummary === 'function'){ updateVarSummary(index); }
-}
-
-// Global listeners for change/input on relevant controls
-document.addEventListener('change', handleSettingEvent);
-document.addEventListener('input', handleSettingEvent);
-
-// On startup, load saved settings for all cards
-document.addEventListener('DOMContentLoaded', ()=>{
-  try{
-    for (let i=0;i<9;i++){ loadCardSettings(i); }
-  }catch(e){ addDebugLog && addDebugLog('Initial settings load failed: '+e); }
-});
-
-
-</script>
+  </script>
+  <!-- ===================== END BLOCK J: MAIN SCRIPT ================================ -->
 </body>
 </html>
