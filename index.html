@@ -6,7 +6,7 @@
   <title>Discord Login + R2 Upload</title>
   <style>
     :root { --border:#e5e7eb; --muted:#6b7280; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 16px; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; max-width: 920px; margin: 40px auto; padding: 0 16px; }
     h1 { font-size: 40px; margin: 0 0 16px; }
     .card { border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin: 16px 0; }
     .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
@@ -19,6 +19,11 @@
     .ok { color: #16a34a; }
     .warn { color: #b45309; }
     .err { color: #dc2626; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    #preview { border:1px solid var(--border); border-radius: 10px; padding: 10px; margin-top: 10px; white-space: pre-wrap; max-height: 320px; overflow:auto; }
+    img.preview { max-width: 100%; height: auto; display:block; }
   </style>
 </head>
 <body>
@@ -40,15 +45,46 @@
     <div id="result"></div>
   </div>
 
+  <div class="card">
+    <h3>3) My files</h3>
+    <div class="row">
+      <button id="refreshBtn">Refresh list</button>
+      <div id="listStatus" class="warn"></div>
+    </div>
+    <table id="filesTable" style="display:none">
+      <thead>
+        <tr>
+          <th style="width:55%">Key</th>
+          <th style="width:15%">Size</th>
+          <th style="width:15%">Modified</th>
+          <th style="width:15%">Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div id="pager" class="row" style="margin-top:8px; display:none">
+      <button id="nextPageBtn">Next page</button>
+    </div>
+    <div id="preview"></div>
+  </div>
+
   <script>
     const statusEl = document.getElementById('status');
     const fileInput = document.getElementById('fileInput');
     const uploadBtn = document.getElementById('uploadBtn');
     const resultEl = document.getElementById('result');
 
-    // Check if a session cookie is present by calling /api/upload-url with no filename:
-    // - 401 => not logged in
-    // - 400 => logged in (we passed the auth gate, then hit "filename required")
+    const refreshBtn = document.getElementById('refreshBtn');
+    const listStatus = document.getElementById('listStatus');
+    const filesTable = document.getElementById('filesTable');
+    const filesTbody = filesTable.querySelector('tbody');
+    const pager = document.getElementById('pager');
+    const nextPageBtn = document.getElementById('nextPageBtn');
+    const previewEl = document.getElementById('preview');
+
+    let cursor = null; // pagination for list-files
+
+    // --- auth status check ---
     async function checkLogin() {
       try {
         const resp = await fetch('/api/upload-url', { credentials: 'include' });
@@ -65,13 +101,14 @@
           statusEl.className = 'warn';
           return false;
         }
-      } catch (e) {
+      } catch {
         statusEl.textContent = 'Status check failed';
         statusEl.className = 'err';
         return false;
       }
     }
 
+    // --- helpers to call our APIs ---
     async function getUploadUrl(filename, contentType) {
       const u = new URL('/api/upload-url', window.location.origin);
       u.searchParams.set('filename', filename);
@@ -81,6 +118,23 @@
       return resp.json();
     }
 
+    async function getFileUrl(key) {
+      const u = new URL('/api/file-url', window.location.origin);
+      u.searchParams.set('key', key);
+      const resp = await fetch(u.toString(), { credentials: 'include' });
+      if (!resp.ok) throw new Error(await resp.text());
+      return resp.json(); // { url }
+    }
+
+    async function listFilesPage(nextCursor) {
+      const u = new URL('/api/list-files', window.location.origin);
+      if (nextCursor) u.searchParams.set('cursor', nextCursor);
+      const resp = await fetch(u.toString(), { credentials: 'include' });
+      if (!resp.ok) throw new Error(await resp.text());
+      return resp.json(); // { items, isTruncated, cursor }
+    }
+
+    // --- UI actions ---
     uploadBtn.onclick = async () => {
       resultEl.textContent = '';
       const f = fileInput.files && fileInput.files[0];
@@ -89,7 +143,6 @@
         resultEl.className = 'warn';
         return;
       }
-      // Ensure logged in
       const ok = await checkLogin();
       if (!ok) {
         resultEl.innerHTML = 'Not logged in. Click <a href="/api/auth/discord/start">Login with Discord</a> first.';
@@ -101,23 +154,109 @@
         const { url, key, user } = await getUploadUrl(f.name, f.type || 'application/octet-stream');
 
         resultEl.textContent = 'Uploading…';
-        const put = await fetch(url, {
-          method: 'PUT',
-          headers: { 'Content-Type': f.type || 'application/octet-stream' },
-          body: f
-        });
+        const put = await fetch(url, { method: 'PUT', headers: { 'Content-Type': f.type || 'application/octet-stream' }, body: f });
         if (!put.ok) throw new Error('Upload failed: ' + put.status);
 
         resultEl.innerHTML = `Done ✅ Uploaded as <code>${key}</code>${user ? ` (user ${user})` : ''}.`;
         resultEl.className = 'ok';
+        // Refresh the list
+        cursor = null;
+        await refreshList();
       } catch (err) {
         resultEl.textContent = String(err);
         resultEl.className = 'err';
       }
     };
 
-    // Kick off initial status check
-    checkLogin();
+    async function refreshList() {
+      previewEl.textContent = '';
+      listStatus.textContent = 'Loading…';
+      filesTable.style.display = 'none';
+      pager.style.display = 'none';
+      filesTbody.innerHTML = '';
+      try {
+        const data = await listFilesPage(null);
+        renderList(data);
+      } catch (e) {
+        listStatus.textContent = 'Error: ' + e.message;
+        listStatus.className = 'err';
+      }
+    }
+
+    function renderList(data) {
+      listStatus.textContent = data.items.length ? '' : 'No files yet.';
+      listStatus.className = data.items.length ? '' : 'warn';
+      filesTable.style.display = data.items.length ? 'table' : 'none';
+      pager.style.display = data.isTruncated ? 'flex' : 'none';
+      cursor = data.isTruncated ? data.cursor : null;
+      filesTbody.innerHTML = '';
+      for (const it of data.items) {
+        const tr = document.createElement('tr');
+        const keyTd = document.createElement('td'); keyTd.innerHTML = `<code>${it.key}</code>`;
+        const sizeTd = document.createElement('td'); sizeTd.textContent = humanBytes(it.size);
+        const whenTd = document.createElement('td'); whenTd.textContent = niceDate(it.lastModified);
+        const actTd = document.createElement('td'); actTd.className = 'actions';
+
+        const openBtn = mkBtn('Open', async () => {
+          const { url } = await getFileUrl(it.key);
+          window.open(url, '_blank');
+        });
+        const previewBtn = mkBtn('Preview', async () => {
+          previewEl.textContent = 'Loading preview…';
+          const { url } = await getFileUrl(it.key);
+          // crude type guess by extension
+          const isImg = /\.(png|jpe?g|gif|webp|svg)$/i.test(it.key);
+          const isText = /\.(txt|md|csv|json|log|html|js|ts|css)$/i.test(it.key);
+          if (isImg) {
+            previewEl.innerHTML = `<img class="preview" src="${url}" alt="preview" />`;
+          } else if (isText) {
+            const r = await fetch(url);
+            const t = await r.text();
+            previewEl.textContent = t.slice(0, 100000); // keep UI snappy
+          } else {
+            previewEl.textContent = 'Preview not supported for this type. Use Open.';
+          }
+        });
+
+        actTd.append(openBtn, previewBtn);
+        tr.append(keyTd, sizeTd, whenTd, actTd);
+        filesTbody.appendChild(tr);
+      }
+    }
+
+    nextPageBtn.onclick = async () => {
+      if (!cursor) return;
+      listStatus.textContent = 'Loading next page…';
+      try {
+        const data = await listFilesPage(cursor);
+        renderList(data);
+      } catch (e) {
+        listStatus.textContent = 'Error: ' + e.message;
+        listStatus.className = 'err';
+      }
+    };
+
+    refreshBtn.onclick = async () => { cursor = null; await refreshList(); };
+
+    // helpers
+    function mkBtn(label, onClick) {
+      const b = document.createElement('button');
+      b.textContent = label;
+      b.onclick = onClick;
+      return b;
+    }
+    function humanBytes(n) {
+      if (n < 1024) return n + ' B';
+      const k = 1024; const i = Math.floor(Math.log(n)/Math.log(k));
+      const units = ['B','KB','MB','GB','TB']; return (n/Math.pow(k,i)).toFixed(1) + ' ' + units[i];
+    }
+    function niceDate(s) { try { return new Date(s).toLocaleString(); } catch { return s; } }
+
+    // initial load
+    (async () => {
+      const ok = await checkLogin();
+      if (ok) await refreshList();
+    })();
   </script>
 </body>
 </html>
