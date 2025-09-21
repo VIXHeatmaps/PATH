@@ -1,21 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- ===================== BEGIN BLOCK A: LOGIN GATE (Discord) ===================== -->
-  <style id="login-gate-style">html{visibility:hidden}</style>
-  <script>
+ <!-- ===================== BEGIN BLOCK A: LOGIN GATE (Discord) ===================== -->
+<style id="login-gate-style">html{visibility:hidden}</style>
+<script>
+  // Fail-safe reveal so the UI never stays hidden
+  (function revealSoon(){
+    try { document.documentElement.style.visibility = 'visible'; } catch(_) {}
+  })();
+
+  // Do the auth check after we reveal the page. If 401 → redirect to Discord.
   (async () => {
     try {
-      const resp = await fetch('/api/upload-url', { credentials: 'include' });
+      // Use a GET-able endpoint to avoid 405s (upload-url is POST-only)
+      const resp = await fetch('/api/file-url?key=__ping__', { credentials: 'include' });
       if (resp.status === 401) {
         location.href = '/api/auth/discord/start';
-        return;
       }
-    } catch (e) {}
-    document.documentElement.style.visibility = 'visible';
+    } catch (_) {
+      // Network error? Stay on the page so you can see errors/UI.
+    }
   })();
-  </script>
-  <!-- ===================== END BLOCK A: LOGIN GATE (Discord) ======================= -->
+</script>
+<!-- ===================== END BLOCK A: LOGIN GATE (Discord) ======================= -->
 
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
