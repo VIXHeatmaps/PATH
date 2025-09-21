@@ -7,8 +7,11 @@
   (async () => {
     try {
       const resp = await fetch('/api/upload-url', { credentials: 'include' });
-      if (resp.status === 401) { location.href = '/api/auth/discord/start'; return; }
-    } catch(e){}
+      if (resp.status === 401) {
+        location.href = '/api/auth/discord/start';
+        return;
+      }
+    } catch (e) {}
     document.documentElement.style.visibility = 'visible';
   })();
   </script>
@@ -23,225 +26,222 @@
   <!-- ===================== BEGIN BLOCK C: STYLES =================================== -->
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#f6f7fb;min-height:100vh;padding:20px}
-    .container{max-width:1600px;margin:0 auto;background:#fff;border-radius:20px;padding:30px;box-shadow:0 20px 40px rgba(0,0,0,.08)}
-    .header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:20px}
-    .title-section{display:flex;align-items:baseline;gap:10px}
-    h1{color:#667eea;font-size:1.2em;font-weight:700;margin:0}
-    .subtitle{color:#9aa0a6;font-size:.9em;font-weight:400}
-    .version{color:#bbb;font-size:.75em;font-family:monospace}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#f7f7fb;min-height:100vh;padding:20px;color:#222}
+    .container{max-width:1600px;margin:0 auto;background:#fff;border-radius:16px;padding:20px 20px 28px;box-shadow:0 10px 30px rgba(0,0,0,.06)}
+    .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+    .title-left{display:flex;align-items:center;gap:10px}
+    h1{color:#4f46e5;font-size:18px;font-weight:800;margin:0}
+    .subtitle{color:#999;font-size:13px;font-weight:400}
     .top-actions{display:flex;align-items:center;gap:8px}
-    .chip{background:#f5f6fa;border:1px solid #e6e8f0;color:#444;font-size:.85em;padding:8px 12px;border-radius:10px;cursor:pointer}
-    .chip.configured{background:#e8f5e9;color:#2e7d32;border-color:#cfead6}
-    .chip:hover{background:#eef0f6}
+    .chip-btn{background:#f3f4f6;border:1px solid #e5e7eb;color:#333;font-size:12px;border-radius:999px;padding:6px 10px;cursor:pointer}
+    .chip-btn:hover{background:#eef2ff;border-color:#c7d2fe;color:#3035d3}
+    .chip-btn.small{padding:4px 8px;font-size:12px}
+    .chip-btn.configured{background:#e8f5e9;color:#2e7d32;border-color:#c4e6ca}
+    .version{color:#bbb;font-size:12px;margin-left:6px;user-select:none}
+
     textarea::placeholder{color:#9aa0a6}
     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-    .input-section{background:#f8f9fa;padding:16px;border-radius:12px;margin-bottom:18px}
-    .input-group{margin-bottom:10px}
-    label{display:block;margin-bottom:8px;color:#555;font-weight:600}
-    textarea{width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:10px;font-size:16px;resize:vertical;min-height:120px;transition:border-color .2s;background:#fff}
-    textarea:focus{outline:none;border-color:#667eea}
-    .runall{margin-top:8px;display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:#667eea;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer}
-    .runall:disabled{opacity:.6;cursor:not-allowed}
-    .outputs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(460px,1fr));gap:16px;margin-top:10px}
-    .output-card{background:#fff;border:2px solid #eef0f6;border-radius:14px;padding:16px;position:relative;transition:transform .15s,box-shadow .15s,border-color .15s}
-    .output-card:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(0,0,0,.06)}
-    .num-badge{position:absolute;top:10px;left:12px;font-size:12px;color:#9aa2b1;font-weight:700}
-    .output-content{background:#f8f9fb;padding:14px;border-radius:10px;min-height:150px;max-height:300px;overflow-y:auto;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,monospace;font-size:14px;line-height:1.5;cursor:pointer}
-    .output-content.error{background:#ffebee;color:#c62828}
-    .output-content.success{background:#eefbf0}
-    .refresh-btn{position:absolute;top:8px;right:8px;width:28px;height:28px;background:#fff;border:1px solid #e6e8f0;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px}
+
+    .prompt{background:#fbfbfe;border:2px solid #ececf6;border-radius:12px;padding:12px;font-size:16px;width:100%;min-height:110px;outline:none}
+    .prompt:focus{border-color:#a5b4fc}
+
+    /* Global files dropdown */
+    .files-panel{display:none; margin-top:10px; border:1px solid #e5e7eb; border-radius:12px; padding:12px; background:#fcfcff}
+    .files-panel.open{display:block}
+    .files-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .files-note{margin-top:6px;font-size:11px;color:#777}
+    .files-list{margin-top:8px;font-size:12px;color:#444}
+
+    .runbar{margin-top:12px}
+    .primary-btn{padding:12px 26px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer}
+    .primary-btn:hover{opacity:.95}
+    .loading{display:inline-block;width:20px;height:20px;border:3px solid #f3f3f3;border-top:3px solid #667eea;border-radius:50%;animation:spin 1s linear infinite;margin-left:10px}
+    @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+
+    .outputs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(460px,1fr));gap:18px;margin-top:16px}
+    .output-card{background:#fff;border:2px solid #ececf6;border-radius:12px;padding:14px;position:relative}
+    .output-card:hover{box-shadow:0 8px 20px rgba(0,0,0,.06)}
+    .num-badge{position:absolute;top:10px;left:12px;font-size:12px;color:#9aa2b1;font-weight:700;user-select:none}
+    .refresh-btn{position:absolute;top:8px;right:8px;width:28px;height:28px;background:#fff;border:1px solid #ddd;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px}
+    .refresh-btn:hover{background:#667eea;color:#fff;border-color:#667eea}
     .refresh-btn.spinning{animation:spin 1s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .vars-bar{margin-top:10px;font-size:11px;color:#666;display:flex;align-items:center;gap:6px;cursor:pointer}
+    .output-content{background:#fbfbfe;border:1px dashed #e5e7eb;border-radius:10px;padding:14px;min-height:150px;max-height:300px;overflow:auto;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-size:13px;white-space:pre-wrap}
+    .output-content.success{background:#f0fdf4}
+    .output-content.error{background:#ffebee;color:#b91c1c}
+    .vars-bar{margin:10px 0 6px;font-size:12px;color:#555;cursor:pointer;display:flex;gap:8px;align-items:center}
     .vars-bar .chev{transition:transform .2s;display:inline-block}
     .vars-bar.open .chev{transform:rotate(90deg)}
-    .output-settings.collapsed{display:none}
+    .output-settings{border-top:1px solid #eee;padding-top:10px}
+    .collapsed{display:none}
     .settings-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
     .setting-group{display:flex;flex-direction:column;gap:4px}
     .setting-label{font-size:11px;color:#666}
-    .output-settings select,.output-settings input,.output-settings textarea{padding:8px;border:1px solid #e6e8f0;border-radius:8px;font-size:12px;background:#fff}
-    .style-input textarea{min-height:56px}
-    .error-message{color:#d32f2f;padding:10px;background:#ffebee;border-radius:8px;margin-top:10px;display:none}
-    .error-message.active{display:block}
-    .debug-panel{display:none;background:#f5f5f5;padding:15px;border-radius:10px;margin-bottom:16px;font-size:12px;font-family:monospace;max-height:200px;overflow-y:auto}
+    .setting-group input,.setting-group select,.setting-group textarea{padding:8px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px}
+    .setting-group textarea{min-height:72px}
+    .setting-group .full{grid-column:1/-1}
+
+    .debug-panel{display:none;background:#f5f5f5;padding:12px;border-radius:8px;margin:10px 0;font-size:12px;font-family:monospace;max-height:220px;overflow:auto}
     .debug-panel.active{display:block}
-    .toast{position:fixed;bottom:30px;right:30px;background:#4CAF50;color:#fff;padding:12px 16px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.15);opacity:0;transform:translateY(20px);transition:all .25s;z-index:1001}
+
+    .toast{position:fixed;bottom:30px;right:30px;background:#4CAF50;color:#fff;padding:12px 14px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.15);opacity:0;transform:translateY(10px);transition:all .25s;z-index:1001}
     .toast.show{opacity:1;transform:translateY(0)}
-    /* Modal */
-    .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.45)}
-    .modal.active{display:flex;align-items:center;justify-content:center}
-    .modal-content{background:#fff;padding:22px;border-radius:14px;width:92%;max-width:560px}
-    .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-    .modal-title{font-size:1.2em;font-weight:700;color:#333}
-    .modal-close{border:none;background:transparent;font-size:22px;line-height:1;cursor:pointer;color:#999}
-    .modal-body{margin-top:10px}
-    .tip{margin-top:8px;font-size:11px;color:#777}
   </style>
   <!-- ===================== END BLOCK C: STYLES ===================================== -->
 </head>
 <body>
-  <!-- ===================== BEGIN BLOCK D: PAGE HEADER + TOP ACTIONS ================= -->
   <div class="container">
+    <!-- ===================== BEGIN BLOCK D: HEADER ================================ -->
     <div class="header">
-      <div class="title-section">
+      <div class="title-left">
         <h1>PATH</h1>
         <span class="subtitle">Parallel Adaptive Text Helper</span>
       </div>
       <div class="top-actions">
-        <button class="chip" id="apiKeyBtn" title="API Key">🔐 API</button>
-        <button class="chip" id="filesBtn" title="Global knowledge files">📁 Files</button>
-        <button class="chip" id="debugBtn" title="Debug">🛠 Debug</button>
-        <button class="chip" id="pauseAllBtn" title="Pause/Resume all">⏸ All</button>
-        <input id="delaySec" type="number" min="0" step="0.1" value="5" title="sec. delay" style="width:70px;padding:6px 8px;border:1px solid #e6e8f0;border-radius:8px;font-size:12px" />
+        <button id="filesToggle" class="chip-btn small" type="button">Files ▸</button>
+        <button class="chip-btn small" id="apiKeyBtn" onclick="openApiKeyModal()" title="API Key">🔐 API</button>
+        <button class="chip-btn small" onclick="toggleDebug()" title="Debug">🛠 Debug</button>
         <span class="version">v0.25_visible_instructions</span>
       </div>
     </div>
-    <!-- ===================== END BLOCK D =========================================== -->
+    <!-- ===================== END BLOCK D: HEADER ================================== -->
 
-    <!-- ===================== BEGIN BLOCK E: DEBUG PANEL ============================ -->
+    <!-- Global files dropdown panel -->
+    <div id="globalFilesPanel" class="files-panel">
+      <div style="font-weight:700;color:#444;margin-bottom:8px;">Global Knowledge Files</div>
+      <div class="files-row">
+        <input id="globalFileInput" type="file" multiple />
+        <button class="chip-btn" id="uploadGlobalBtn" type="button">Upload to Global</button>
+      </div>
+      <div id="globalFilesList" class="files-list"></div>
+      <div class="files-note">Tip: upload small <code>.txt</code>/<code>.md</code> files. They’re stored in R2 and listed here. Remove to stop including.</div>
+    </div>
+
+    <!-- ===================== BEGIN BLOCK E: PROMPT + RUN ========================== -->
+    <div class="input-group" style="margin-top:10px">
+      <label for="prompt" class="sr-only">Enter text</label>
+      <textarea id="prompt" class="prompt" placeholder="Enter your message…&#10;Press Enter or click Run all"></textarea>
+    </div>
+    <div class="runbar">
+      <button class="primary-btn" id="runAllBtn" onclick="generateOutputs()">Run all (Enter)</button>
+      <span id="loadingSpinner"></span>
+    </div>
+    <!-- ===================== END BLOCK E: PROMPT + RUN ============================ -->
+
+    <!-- ===================== BEGIN BLOCK F: DEBUG ================================= -->
     <div class="debug-panel" id="debugPanel"></div>
-    <!-- ===================== END BLOCK E =========================================== -->
+    <!-- ===================== END BLOCK F: DEBUG =================================== -->
 
-    <!-- ===================== BEGIN BLOCK F: INPUT SECTION (COMPACT) ================ -->
-    <div class="input-section">
-      <div class="input-group">
-        <label for="prompt" class="sr-only">Enter text</label>
-        <textarea id="prompt" placeholder="Enter your message…&#10;Press Enter or click Run all"></textarea>
-      </div>
-      <button id="runAllBtn" class="runall">Run all (Enter)</button>
-      <div class="error-message" id="errorMessage"></div>
-    </div>
-    <!-- ===================== END BLOCK F =========================================== -->
-
-    <!-- ===================== BEGIN BLOCK G: OUTPUTS GRID =========================== -->
+    <!-- ===================== BEGIN BLOCK G: OUTPUTS =============================== -->
     <div class="outputs-grid" id="outputsGrid"></div>
+    <!-- ===================== END BLOCK G: OUTPUTS ================================= -->
   </div>
-  <!-- ===================== END BLOCK G ============================================ -->
 
-  <!-- ===================== BEGIN BLOCK H1: API KEY MODAL ========================== -->
-  <div id="apiKeyModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <div class="modal-title">OpenAI API Key</div>
-        <button class="modal-close" onclick="closeApiKeyModal()">×</button>
+  <!-- ===================== BEGIN BLOCK H: API KEY MODAL ============================ -->
+  <div id="apiKeyModal" class="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);align-items:center;justify-content:center;z-index:1000">
+    <div class="modal-content" style="background:#fff;padding:22px;border-radius:12px;width:90%;max-width:500px;">
+      <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h2 class="modal-title" style="font-size:18px;margin:0">OpenAI API Key</h2>
+        <button class="chip-btn small" onclick="closeApiKeyModal()">Close</button>
       </div>
-      <div class="modal-body">
-        <input type="password" id="apiKeyInput" style="width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:10px;font-size:16px" placeholder="sk-..." />
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-          <button class="chip" onclick="closeApiKeyModal()">Cancel</button>
-          <button class="chip configured" onclick="saveApiKey()">Save</button>
-        </div>
+      <div class="modal-body" style="margin-bottom:12px">
+        <input type="password" id="apiKeyInput" class="modal-input" placeholder="sk-..." style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px" />
+        <p style="color:#666;font-size:12px;margin-top:8px;">Stored locally and only sent to OpenAI.</p>
+      </div>
+      <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="chip-btn" onclick="closeApiKeyModal()">Cancel</button>
+        <button class="chip-btn" style="background:#4f46e5;color:#fff;border-color:#4f46e5" onclick="saveApiKey()">Save</button>
       </div>
     </div>
   </div>
-  <!-- ===================== END BLOCK H1 =========================================== -->
-
-  <!-- ===================== BEGIN BLOCK H2: FILES MODAL (GLOBAL KNOWLEDGE) ========= -->
-  <div id="filesModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <div class="modal-title">Global Knowledge Files</div>
-        <button class="modal-close" onclick="closeFilesModal()">×</button>
-      </div>
-      <div class="modal-body">
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <input id="globalFileInput" type="file" multiple />
-          <button class="chip" id="uploadGlobalBtn" type="button">Upload</button>
-        </div>
-        <div id="globalFilesList" style="margin-top:10px;font-size:12px;color:#333"></div>
-        <div class="tip">Tip: upload small <code>.txt</code>/<code>.md</code> files. They’re stored in R2 and listed here. Remove from the list to stop including them.</div>
-      </div>
-    </div>
-  </div>
-  <!-- ===================== END BLOCK H2 =========================================== -->
+  <!-- ===================== END BLOCK H: API KEY MODAL ============================== -->
 
   <!-- ===================== BEGIN BLOCK I: TOAST ==================================== -->
-  <div id="toast" class="toast">Saved!</div>
-  <!-- ===================== END BLOCK I ============================================ -->
+  <div id="toast" class="toast">Saved</div>
+  <!-- ===================== END BLOCK I: TOAST ====================================== -->
 
-  <!-- ===================== BEGIN BLOCK J: MAIN SCRIPT ============================== -->
+  <!-- ===================== BEGIN BLOCK J: SCRIPT =================================== -->
   <script>
     /* ========= State ========= */
     let outputs = Array(9).fill('');
     let debugMode = false;
     let apiKey = localStorage.getItem('path_api_key') || '';
-    let globalPaused = true; // auto-continue disabled by default
-    let abortControllers = Array(9).fill(null);
 
-    /* ========= Defaults per bot ========= */
-    const defaultConfigs = Array.from({length:9}, (_,i)=>({
-      name: `Bot ${i+1}`,
-      model: i===3 || i===8 ? 'gpt-5-mini' : (i===6 ? 'gpt-5-nano' : 'gpt-5'),
-      role: '',
-      task: '',
-      style: [
-        'Write in a concise, narrative style',
-        'Write in an analytical, essay-like style',
-        'Write in a punchy, engaging copywriting style',
-        'Write in plain, accessible English',
-        'Write in a technical, precise style',
-        'Write in a thoughtful, storytelling style',
-        'Write in a casual, conversational blog style',
-        'Write in a journalistic, news-reporting style',
-        'Write in a poetic, lyrical style'
-      ][i] || '',
-      fileinst: 'Use the files as background context; cite or echo only when relevant.'
-    }));
+    /* ========= Helpers ========= */
+    function addDebugLog(msg){ if(!debugMode) return;
+      const p=document.getElementById('debugPanel');
+      const ts=new Date().toISOString().substr(11,8);
+      p.innerHTML+=`[${ts}] ${msg}\n`;
+      p.scrollTop=p.scrollHeight;
+    }
+    function showToast(message){const t=document.getElementById('toast');t.textContent=message;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600);}
+    function showError(message){
+      // light inline toast using debug panel
+      const d = document.getElementById('debugPanel');
+      if (!debugMode) toggleDebug();
+      d.innerHTML += 'ERROR: ' + message + '\\n';
+    }
 
-    /* ========= Utils ========= */
-    function addDebugLog(m){ if(!debugMode) return; const p=document.getElementById('debugPanel'); const ts=new Date().toISOString().substr(11,8); p.innerHTML+=`[${ts}] ${m}\n`; p.scrollTop=p.scrollHeight; }
-    function showToast(t){ const el=document.getElementById('toast'); el.textContent=t; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),1500); }
-    function showError(t){ const el=document.getElementById('errorMessage'); el.textContent=t; el.classList.add('active'); setTimeout(()=>el.classList.remove('active'),4000); }
-    function getModelDefaults(model){ const m=(model||'').toLowerCase(); return m.startsWith('gpt-5') ? { reasoning:'minimal', verbosity:'low', maxtok:30 } : { reasoning:'medium', verbosity:'medium', maxtok:30 }; }
+    function toggleDebug(){debugMode=!debugMode;document.getElementById('debugPanel').classList.toggle('active');}
 
-    /* ========= Persistence ========= */
-    const VAR_KEYS = ['name','model','reasoning','verbosity','style','maxtok','role','task','fileinst'];
-    function cardKey(i,k){ return `path_card_${i}_${k}`; }
+    function openApiKeyModal(){document.getElementById('apiKeyModal').style.display='flex';document.getElementById('apiKeyInput').value=apiKey;}
+    function closeApiKeyModal(){document.getElementById('apiKeyModal').style.display='none';}
+    function saveApiKey(){apiKey=document.getElementById('apiKeyInput').value;localStorage.setItem('path_api_key',apiKey);updateApiKeyButton();closeApiKeyModal();showToast('API key saved');}
+    function updateApiKeyButton(){const b=document.getElementById('apiKeyBtn');if(!b) return;if(apiKey){b.classList.add('configured');b.textContent='🔐 API';}else{b.classList.remove('configured');b.textContent='🔑 API';}}
+
+    // Global files dropdown toggle
+    document.getElementById('filesToggle').addEventListener('click', ()=>{
+      const p=document.getElementById('globalFilesPanel');
+      const open = p.classList.toggle('open');
+      document.getElementById('filesToggle').textContent = open ? 'Files ▾' : 'Files ▸';
+    });
+
+    /* ========= Upload + files helpers ========= */
     function filesKeyGlobal(){ return `path_global_files`; }
     function filesKeyForBot(i){ return `path_card_${i}_files`; }
-    function loadGlobalFiles(){ try{ return JSON.parse(localStorage.getItem(filesKeyGlobal())||'[]'); }catch{ return []; } }
+    function loadGlobalFiles(){ try{ return JSON.parse(localStorage.getItem(filesKeyGlobal())||'[]'); }catch{return [];}}
     function saveGlobalFiles(list){ localStorage.setItem(filesKeyGlobal(), JSON.stringify(list)); }
-    function loadFilesForBot(i){ try{ return JSON.parse(localStorage.getItem(filesKeyForBot(i))||'[]'); }catch{ return []; } }
+    function loadFilesForBot(i){ try{ return JSON.parse(localStorage.getItem(filesKeyForBot(i))||'[]'); }catch{return [];}}
     function saveFilesForBot(i,list){ localStorage.setItem(filesKeyForBot(i), JSON.stringify(list)); }
 
-    /* ========= Files (R2) ========= */
     async function uploadToR2(file){
-      const res = await fetch('/api/upload-url', { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({ filename:file.name, contentType:file.type||'text/plain' }) });
+      const res = await fetch('/api/upload-url', {
+        method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+        body: JSON.stringify({ filename:file.name, contentType:file.type || 'text/plain' })
+      });
       if(!res.ok) throw new Error('Failed to get signed upload URL');
       const { url, key } = await res.json();
       const put = await fetch(url, { method:'PUT', headers:{'Content-Type': file.type||'text/plain'}, body:file });
-      if(!put.ok) throw new Error('Upload failed');
+      if(!put.ok) throw new Error('PUT to storage failed');
       return { key, name:file.name, size:file.size };
     }
     async function fetchFileTextByKey(key){
-      const res = await fetch('/api/file-url?key=' + encodeURIComponent(key), { credentials:'include' });
+      const res = await fetch('/api/file-url?key='+encodeURIComponent(key), { credentials:'include' });
       if(!res.ok) throw new Error('file-url failed');
       const { url } = await res.json();
-      return fetch(url).then(r=>r.text());
+      return await fetch(url).then(r=>r.text());
     }
     function renderFileList(container, list, scope, index){
       if (!container) return;
-      if (!Array.isArray(list) || list.length===0){ container.innerHTML = `<div style="color:#777">No files.</div>`; return; }
+      if (!Array.isArray(list) || list.length===0){ container.innerHTML='<div style="color:#777">No files.</div>'; return;}
       container.innerHTML = list.map((f, idx)=>`
-        <div style="display:flex; gap:8px; align-items:center; padding:6px 0; border-top:1px dashed #eee;">
-          <div style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+        <div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-top:1px dashed #eee">
+          <div style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
             <strong>${f.name}</strong> <span style="color:#999">(${f.size||'?'} bytes)</span>
           </div>
-          <button class="chip" style="padding:4px 8px" type="button" data-scope="${scope}" data-index="${index||''}" data-fileidx="${idx}" data-act="preview">Preview</button>
-          <button class="chip" style="padding:4px 8px" type="button" data-scope="${scope}" data-index="${index||''}" data-fileidx="${idx}" data-act="remove">Remove</button>
+          <button class="chip-btn small" type="button" data-scope="${scope}" data-index="${index||''}" data-fileidx="${idx}" data-act="preview">Preview</button>
+          <button class="chip-btn small" type="button" data-scope="${scope}" data-index="${index||''}" data-fileidx="${idx}" data-act="remove">Remove</button>
         </div>
       `).join('');
     }
     document.addEventListener('click', async (e)=>{
-      const btn=e.target.closest('button.chip'); if(!btn) return;
-      const act=btn.dataset.act; if(!act) return;
+      const btn = e.target.closest('button.chip-btn'); if(!btn) return;
+      const act = btn.dataset.act; if(!act) return;
       if (act==='preview'){
         const scope=btn.dataset.scope, i=parseInt(btn.dataset.index||'-1',10), fi=parseInt(btn.dataset.fileidx,10);
         const list = scope==='global' ? loadGlobalFiles() : loadFilesForBot(i);
-        const file = list[fi]; if (!file) return;
-        try{ const text=await fetchFileTextByKey(file.key); alert((text||'').slice(0,2000)); }catch(err){ alert('Preview failed: '+err.message); }
-      } else if (act==='remove'){
+        const file = list[fi]; if(!file) return;
+        try{ alert((await fetchFileTextByKey(file.key)).slice(0,2000)); }catch(err){ alert('Preview failed: '+err.message); }
+      }else if(act==='remove'){
         const scope=btn.dataset.scope, i=parseInt(btn.dataset.index||'-1',10), fi=parseInt(btn.dataset.fileidx,10);
         const list = scope==='global' ? loadGlobalFiles() : loadFilesForBot(i);
         list.splice(fi,1);
@@ -250,46 +250,115 @@
       }
     });
 
-    /* ========= Header buttons / modals ========= */
-    function updateApiKeyButton(){ const btn=document.getElementById('apiKeyBtn'); if (!btn) return; if (apiKey){ btn.classList.add('configured'); } else { btn.classList.remove('configured'); } }
-    document.getElementById('apiKeyBtn').addEventListener('click', ()=>{ openApiKeyModal(); });
-    document.getElementById('filesBtn').addEventListener('click', ()=>{ openFilesModal(); });
-    document.getElementById('debugBtn').addEventListener('click', ()=>{ debugMode=!debugMode; document.getElementById('debugPanel').classList.toggle('active'); });
+    // wire global uploader
+    window.addEventListener('DOMContentLoaded', ()=>{
+      renderFileList(document.getElementById('globalFilesList'), loadGlobalFiles(), 'global');
+      const gBtn=document.getElementById('uploadGlobalBtn'); const gInp=document.getElementById('globalFileInput');
+      if (gBtn && gInp){
+        gBtn.addEventListener('click', async ()=>{
+          if (!gInp.files || !gInp.files.length) return;
+          const cur = loadGlobalFiles();
+          for(const f of gInp.files){ try{ cur.push(await uploadToR2(f)); }catch(e){ showError('Global upload failed: '+e.message); } }
+          saveGlobalFiles(cur); renderFileList(document.getElementById('globalFilesList'), cur, 'global'); gInp.value='';
+        });
+      }
+    });
 
-    function openApiKeyModal(){ document.getElementById('apiKeyModal').classList.add('active'); document.getElementById('apiKeyInput').value=apiKey; }
-    function closeApiKeyModal(){ document.getElementById('apiKeyModal').classList.remove('active'); }
-    function saveApiKey(){ apiKey=document.getElementById('apiKeyInput').value; localStorage.setItem('path_api_key',apiKey); updateApiKeyButton(); showToast('API key saved'); closeApiKeyModal(); }
+    /* ========= Models & defaults ========= */
+    function getModelDefaults(model){
+      const m=(model||'').toLowerCase();
+      return m.startsWith('gpt-5') ? { reasoning:'minimal', verbosity:'low', maxtok:30, temp:0.7 }
+                                   : { reasoning:'medium',  verbosity:'medium', maxtok:30, temp:0.7 };
+    }
 
-    function openFilesModal(){ document.getElementById('filesModal').classList.add('active'); renderFileList(document.getElementById('globalFilesList'), loadGlobalFiles(), 'global'); }
-    function closeFilesModal(){ document.getElementById('filesModal').classList.remove('active'); }
+    const personaTemplate =
+`You are a helpful assistant.
+
+Behavior: act politely, ask clarifying questions when needed.
+Goals: achieve the user's objective efficiently.
+Writing style: clear, concise, and concrete.
+Constraints: avoid hallucinating facts; admit uncertainty briefly.
+Use uploaded files to: extract relevant details and ground answers (do not quote excessively).`;
+
+    const defaultConfigs = Array.from({length:9}, (_,i)=>({
+      name: `Bot ${i+1}`,
+      model: i===3 || i===8 ? 'gpt-5-mini' : (i===6 ? 'gpt-5-nano' : 'gpt-5'),
+      persona: personaTemplate
+    }));
+
+    /* ========= Persistence ========= */
+    const VAR_KEYS = ['name','model','reasoning','verbosity','maxtok','temp','persona'];
+    function cardKey(i,k){ return `path_card_${i}_${k}`; }
+
+    function loadCardSettings(index){
+      try{
+        VAR_KEYS.forEach(k=>{
+          const el=document.getElementById(`${k}-${index}`); if(!el) return;
+          const saved = localStorage.getItem(cardKey(index,k));
+          if (saved!==null) el.value = saved;
+        });
+        renderFileList(document.getElementById(`botFilesList-${index}`), loadFilesForBot(index), 'bot', index);
+        updateVarSummary(index);
+      }catch(e){ addDebugLog('Settings load err '+e); }
+    }
+    function handleSettingEvent(e){
+      const t=e && e.target; if(!t||!t.id) return;
+      const m=t.id.match(/^(name|model|reasoning|verbosity|maxtok|temp|persona)-(\d+)$/);
+      if(!m) return;
+      const key=m[1], idx=parseInt(m[2],10);
+      localStorage.setItem(cardKey(idx,key), t.value);
+      if (key==='model') applyModelDefaults(idx, t.value, true);
+      updateVarSummary(idx);
+    }
+    document.addEventListener('change', handleSettingEvent);
+    document.addEventListener('input',  handleSettingEvent);
 
     /* ========= Cards UI ========= */
     function getVarSummary(index){
-      const model = document.getElementById(`model-${index}`)?.value || '';
-      const r  = document.getElementById(`reasoning-${index}`)?.value || '';
-      const v  = document.getElementById(`verbosity-${index}`)?.value || '';
-      const cap= document.getElementById(`maxtok-${index}`)?.value || 'auto';
       const name = document.getElementById(`name-${index}`)?.value || `Bot ${index+1}`;
-      return `${name} · ${model} · r:${r} · v:${v} · cap:${cap}`;
+      const model= document.getElementById(`model-${index}`)?.value || '';
+      const r    = document.getElementById(`reasoning-${index}`)?.value || '';
+      const v    = document.getElementById(`verbosity-${index}`)?.value || '';
+      const cap  = document.getElementById(`maxtok-${index}`)?.value || 'auto';
+      const temp = document.getElementById(`temp-${index}`)?.value || '0.7';
+      return `${name} · ${model} · r:${r} · v:${v} · cap:${cap} · T:${temp}`;
     }
-    function updateVarSummary(index){ const el=document.getElementById(`varssum-${index}`); if (el) el.textContent=getVarSummary(index); }
-    function applyModelDefaults(index, model){ const d=getModelDefaults(model); const r=document.getElementById(`reasoning-${index}`), v=document.getElementById(`verbosity-${index}`), t=document.getElementById(`maxtok-${index}`); if (r) r.value=d.reasoning; if (v) v.value=d.verbosity; if (t) t.value=d.maxtok; updateVarSummary(index); }
+    function updateVarSummary(index){
+      const el=document.getElementById(`varssum-${index}`);
+      if (el) el.textContent=getVarSummary(index);
+    }
+    function applyModelDefaults(index, model, fromChange){
+      const d=getModelDefaults(model);
+      const rSel=document.getElementById(`reasoning-${index}`);
+      const vSel=document.getElementById(`verbosity-${index}`);
+      const tInp=document.getElementById(`maxtok-${index}`);
+      const temp=document.getElementById(`temp-${index}`);
+      if (rSel) rSel.value=d.reasoning;
+      if (vSel) vSel.value=d.verbosity;
+      if (tInp) tInp.value=d.maxtok;
+      if (temp) temp.value=d.temp;
+      updateVarSummary(index);
+      addDebugLog(`Defaults → ${index+1}: ${JSON.stringify(d)}`);
+    }
 
     function initializeOutputCards(){
-      const grid=document.getElementById('outputsGrid'); grid.innerHTML='';
+      const grid=document.getElementById('outputsGrid');
+      grid.innerHTML='';
       for (let i=0;i<9;i++){
         grid.appendChild(createOutputCard(i));
-        const modelSel=document.getElementById(`model-${i}`); if(modelSel) applyModelDefaults(i, modelSel.value);
+        const modelSel=document.getElementById(`model-${i}`);
+        if(modelSel) applyModelDefaults(i, modelSel.value, false);
         loadCardSettings(i);
       }
     }
 
     function createOutputCard(index){
       const cfg=defaultConfigs[index];
-      const card=document.createElement('div'); card.className='output-card'; card.id=`output-${index}`;
+      const card=document.createElement('div');
+      card.className='output-card'; card.id=`output-${index}`;
       card.innerHTML=`
         <div class="num-badge">${index+1}.</div>
-        <button class="refresh-btn" id="refresh-${index}" onclick="refreshOutput(${index})" title="Run this bot">↻</button>
+        <button class="refresh-btn" id="refresh-${index}" title="Run this bot" onclick="refreshOutput(${index})">↻</button>
         <div class="output-content" id="content-${index}" onclick="appendOutput(${index})">Ready to generate...</div>
 
         <div class="vars-bar" id="varsbar-${index}" onclick="toggleVars(${index})">
@@ -298,8 +367,7 @@
 
         <div class="output-settings collapsed" id="settings-${index}">
           <div class="settings-grid">
-
-            <div class="setting-group" style="grid-column:1/-1">
+            <div class="setting-group full">
               <label class="setting-label">Bot Name</label>
               <input id="name-${index}" value="${cfg.name}" placeholder="e.g., Researcher, Therapist…" />
             </div>
@@ -340,140 +408,130 @@
 
             <div class="setting-group">
               <label class="setting-label">Max tokens (hard cap)</label>
-              <input type="number" id="maxtok-${index}" min="1" step="1" value="30" placeholder="e.g., 80" />
+              <input type="number" id="maxtok-${index}" min="1" step="1" value="30" />
             </div>
 
-            <div class="setting-group" style="grid-column:1/-1">
-              <label class="setting-label">Role</label>
-              <textarea id="role-${index}" placeholder="I am a therapist / researcher / friend…">${cfg.role}</textarea>
+            <div class="setting-group">
+              <label class="setting-label">Temperature (0–2)</label>
+              <input type="number" id="temp-${index}" min="0" max="2" step="0.1" value="0.7" />
             </div>
 
-            <div class="setting-group" style="grid-column:1/-1">
-              <label class="setting-label">Task</label>
-              <textarea id="task-${index}" placeholder="Describe exactly what this bot should do…">${cfg.task}</textarea>
+            <div class="setting-group full">
+              <label class="setting-label">Persona (second-person default). Tip template below:</label>
+              <textarea id="persona-${index}" placeholder="${personaTemplate.replace(/"/g,'&quot;')}">${cfg.persona}</textarea>
             </div>
 
-            <div class="setting-group style-input" style="grid-column:1/-1">
-              <label class="setting-label">Style</label>
-              <textarea id="style-${index}" placeholder="How should it write/behave?">${cfg.style}</textarea>
-            </div>
-
-            <div class="setting-group" style="grid-column:1/-1">
-              <label class="setting-label">File Instructions</label>
-              <textarea id="fileinst-${index}" placeholder="How to use the files (imitate style, keep in mind, quote cautiously…)">${cfg.fileinst}</textarea>
-            </div>
-
-            <div class="setting-group" style="grid-column:1/-1">
+            <div class="setting-group full">
               <label class="setting-label">Bot Files</label>
-              <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <div class="files-row">
                 <input id="botFileInput-${index}" type="file" multiple />
-                <button type="button" class="chip" id="uploadBotBtn-${index}">Upload to this bot</button>
+                <button type="button" class="chip-btn small" id="uploadBotBtn-${index}">Upload to this bot</button>
               </div>
-              <div id="botFilesList-${index}" style="margin-top:8px; font-size:12px;"></div>
+              <div id="botFilesList-${index}" class="files-list"></div>
             </div>
-
           </div>
         </div>`;
-      // wire uploads
+      // Wire bot uploads
       card.querySelector(`#uploadBotBtn-${index}`).addEventListener('click', async ()=>{
         const inp=card.querySelector(`#botFileInput-${index}`); if(!inp||!inp.files||!inp.files.length) return;
         const current=loadFilesForBot(index);
-        for(const f of inp.files){ try{ const meta=await uploadToR2(f); current.push(meta); }catch(e){ showError('Bot file upload failed: '+e.message); } }
+        for(const f of inp.files){ try{ current.push(await uploadToR2(f)); }catch(e){ showError('Bot file upload failed: '+e.message); } }
         saveFilesForBot(index,current);
         renderFileList(card.querySelector(`#botFilesList-${index}`), current, 'bot', index);
         inp.value='';
       });
-      card.querySelector(`#model-${index}`).addEventListener('change', (e)=> applyModelDefaults(index,e.target.value));
+      // Defaults on model change
+      card.querySelector(`#model-${index}`).addEventListener('change', (e)=>applyModelDefaults(index, e.target.value, true));
       return card;
     }
 
     function toggleVars(index){
-      const s=document.getElementById(`settings-${index}`), b=document.getElementById(`varsbar-${index}`);
+      const s=document.getElementById(`settings-${index}`);
+      const b=document.getElementById(`varsbar-${index}`);
       if (!s||!b) return;
       if (s.classList.contains('collapsed')){ s.classList.remove('collapsed'); b.classList.add('open'); }
       else { s.classList.add('collapsed'); b.classList.remove('open'); }
     }
 
-    /* ========= Settings persistence ========= */
-    function loadCardSettings(index){
-      try{
-        VAR_KEYS.forEach(k=>{
-          const el=document.getElementById(`${k}-${index}`); if(!el) return;
-          const saved=localStorage.getItem(cardKey(index,k)); if(saved!==null) el.value=saved;
-        });
-        renderFileList(document.getElementById(`botFilesList-${index}`), loadFilesForBot(index), 'bot', index);
-        updateVarSummary(index);
-      }catch(e){ addDebugLog(`Settings load error [${index}]: ${e}`); }
-    }
-    function handleSettingEvent(e){
-      const t=e && e.target; if(!t||!t.id) return;
-      const m=t.id.match(/^(name|model|reasoning|verbosity|style|maxtok|role|task|fileinst)-(\d+)$/);
-      if(!m) return;
-      localStorage.setItem(cardKey(parseInt(m[2],10), m[1]), t.value);
-      if (m[1]==='model') applyModelDefaults(parseInt(m[2],10), t.value);
-      updateVarSummary(parseInt(m[2],10));
-    }
-    document.addEventListener('change', handleSettingEvent);
-    document.addEventListener('input',  handleSettingEvent);
-
-    /* ========= Build prompts & call APIs ========= */
+    /* ========= Build context (global + bot files) ========= */
     async function buildContextText(index){
-      const all=[...loadGlobalFiles(), ...loadFilesForBot(index)];
-      if (!all.length) return '';
+      const all = [...loadGlobalFiles(), ...loadFilesForBot(index)];
+      if (all.length===0) return '';
       let total=0, parts=[];
       for(const f of all){
-        try{ let t=await fetchFileTextByKey(f.key); if(!t) continue; t=t.slice(0,4000); total+=t.length; if(total>8000) break; parts.push(`--- BEGIN FILE: ${f.name}\n${t}\n--- END FILE: ${f.name}`); }catch(e){}
+        try{
+          let t = await fetchFileTextByKey(f.key);
+          if (!t) continue;
+          t = t.slice(0, 4000); // cap per file
+          total += t.length; if (total>8000) break;
+          parts.push(`--- BEGIN FILE: ${f.name}\n${t}\n--- END FILE: ${f.name}`);
+        }catch{}
       }
       return parts.join('\n\n');
     }
+
     function extractTextFromResponse(data){
       try{
         if (data?.output_text) return data.output_text;
         if (Array.isArray(data?.output)){
-          const msg = data.output.find(x=>x.type==='message');
-          if (msg?.content?.length){ const t=msg.content.find(x=>x.type==='output_text'); if (t?.text) return t.text; return msg.content.map(c=>c.text||c.content||'').join('\n'); }
+          const msg=data.output.find(x=>x.type==='message');
+          if (msg?.content?.length){
+            const t=msg.content.find(x=>x.type==='output_text'); if (t?.text) return t.text;
+            return msg.content.map(c=>c.text||c.content||'').join('\n');
+          }
         }
-        if (Array.isArray(data?.choices)){ return data.choices[0]?.message?.content || data.choices[0]?.text || ''; }
+        if (Array.isArray(data?.choices)){
+          return data.choices[0]?.message?.content || data.choices[0]?.text || '';
+        }
       }catch{}
       return '';
     }
 
+    /* ========= Run one / all ========= */
     async function refreshOutput(index){
-      if (!apiKey){ showError('Please save your API key first'); openApiKeyModal(); return; }
+      if (!apiKey){ openApiKeyModal(); showError('Please save your API key first'); return; }
       const prompt=document.getElementById('prompt').value || '';
       const name = document.getElementById(`name-${index}`).value || `Bot ${index+1}`;
       const model= document.getElementById(`model-${index}`).value;
       const reason=document.getElementById(`reasoning-${index}`).value;
       const verb  = document.getElementById(`verbosity-${index}`).value;
-      const style = document.getElementById(`style-${index}`).value;
-      const role  = document.getElementById(`role-${index}`).value;
-      const task  = document.getElementById(`task-${index}`).value;
-      const filei = document.getElementById(`fileinst-${index}`).value;
-      let maxTok  = parseInt(document.getElementById(`maxtok-${index}`)?.value,10); if (!(maxTok>0)) maxTok=null;
+      const maxt  = parseInt(document.getElementById(`maxtok-${index}`)?.value,10);
+      const temp  = Math.max(0, Math.min(2, parseFloat(document.getElementById(`temp-${index}`)?.value || '0.7')));
+      const persona = document.getElementById(`persona-${index}`).value || '';
 
-      const btn=document.getElementById(`refresh-${index}`), out=document.getElementById(`content-${index}`);
+      const btn=document.getElementById(`refresh-${index}`);
+      const out=document.getElementById(`content-${index}`);
       btn.classList.add('spinning'); out.classList.remove('error','success'); out.textContent=`${name} is thinking…`;
 
       try{
         const filesContext = await buildContextText(index);
-        let sys = '';
-        if (role) sys += `You are ${role}. `;
-        if (task) sys += `Your task: ${task}. `;
-        if (style) sys += `Style guidance: ${style}. `;
-        if (filesContext){ sys += `You have reference material. File instructions: ${filei||'Use as background context only.'}\n\n${filesContext}`; }
+        const sys = [persona, filesContext && `Reference material:\n${filesContext}`].filter(Boolean).join('\n\n');
         const userMsg = prompt ? `User input:\n${prompt}` : 'No additional user input was provided.';
 
         let textOut='';
         if (model.startsWith('gpt-5')){
-          const body = { model, input: `${sys}\n\n${userMsg}`, reasoning:{effort:reason}, text:{verbosity:verb} }; if (maxTok) body.max_output_tokens = maxTok;
-          const r = await fetch('https://api.openai.com/v1/responses', { method:'POST', headers:{'Authorization':`Bearer ${apiKey}`,'Content-Type':'application/json'}, body: JSON.stringify(body) });
+          const body = { model, input: `${sys}\n\n${userMsg}`, reasoning:{effort:reason}, text:{verbosity:verb}, temperature: temp };
+          if (maxt>0) body.max_output_tokens = maxt;
+          const r = await fetch('https://api.openai.com/v1/responses', {
+            method:'POST', headers:{'Authorization':`Bearer ${apiKey}`,'Content-Type':'application/json'}, body: JSON.stringify(body)
+          });
           const raw = await r.text(); let data; try{ data=JSON.parse(raw);}catch{ data={output_text:raw}; }
           if (!r.ok) throw new Error(data?.error?.message || `HTTP ${r.status}`);
           textOut = (extractTextFromResponse(data)||'').trim();
         } else {
-          const body = { model, messages:[ {role:'system',content: sys || 'You are a helpful assistant.'}, {role:'user',content:userMsg} ] }; if (maxTok) body.max_tokens = maxTok;
-          const r = await fetch('https://api.openai.com/v1/chat/completions', { method:'POST', headers:{'Authorization':`Bearer ${apiKey}`,'Content-Type':'application/json'}, body: JSON.stringify(body) });
-          const data = await r.json(); if (!r.ok) throw new Error(data?.error?.message || `HTTP ${r.status}`);
+          const body = {
+            model, temperature: temp,
+            messages: [
+              { role:'system', content: sys || 'You are a helpful assistant.' },
+              { role:'user',   content: userMsg }
+            ]
+          };
+          if (maxt>0) body.max_tokens = maxt;
+          const r = await fetch('https://api.openai.com/v1/chat/completions', {
+            method:'POST', headers:{'Authorization':`Bearer ${apiKey}`,'Content-Type':'application/json'}, body: JSON.stringify(body)
+          });
+          const data = await r.json();
+          if (!r.ok) throw new Error(data?.error?.message || `HTTP ${r.status}`);
           textOut = (data?.choices?.[0]?.message?.content||'').trim();
         }
 
@@ -481,53 +539,43 @@
         out.textContent=outputs[index]; out.classList.add('success');
       }catch(err){
         out.textContent = `Error: ${err.message||String(err)}`; out.classList.add('error');
-      }finally{ btn.classList.remove('spinning'); }
+      }finally{
+        btn.classList.remove('spinning');
+      }
     }
 
     async function generateOutputs(){
-      if (!apiKey){ showError('Please save your API key first'); openApiKeyModal(); return; }
-      const prompt=document.getElementById('prompt').value; if (!prompt){ showError('Please enter text'); return; }
-      const promises=[]; for (let i=0;i<9;i++){ document.getElementById(`content-${i}`).textContent='Generating…'; promises.push(refreshOutput(i)); }
-      await Promise.all(promises);
+      if (!apiKey){ openApiKeyModal(); showError('Please save your API key first'); return; }
+      const prompt=document.getElementById('prompt').value;
+      if (!prompt){ showError('Please enter text'); return; }
+
+      const ls=document.getElementById('loadingSpinner'); if (ls) ls.innerHTML='<span class="loading"></span>';
+      const tasks=[]; for (let i=0;i<9;i++){ document.getElementById(`content-${i}`).textContent='Generating…'; tasks.push(refreshOutput(i)); }
+      await Promise.all(tasks);
+      if (ls) ls.innerHTML='';
     }
 
     function appendOutput(index){
       if (!outputs[index]) return;
-      const prompt=document.getElementById('prompt'); const sep = prompt.value.trim() ? ' // ' : '';
-      prompt.value += sep + outputs[index]; prompt.scrollTop=prompt.scrollHeight;
-      showToast('Text appended to prompt!');
+      const prompt=document.getElementById('prompt');
+      const sep = prompt.value.trim() ? ' // ' : '';
+      prompt.value += sep + outputs[index];
+      prompt.scrollTop=prompt.scrollHeight;
+      showToast('Text appended!');
     }
 
-    /* ========= Startup / wiring ========= */
-    window.addEventListener('DOMContentLoaded', ()=>{
-      initializeOutputCards(); updateApiKeyButton();
-
-      // Global files modal wiring
-      const gBtn=document.getElementById('uploadGlobalBtn'); const gInp=document.getElementById('globalFileInput');
-      if (gBtn && gInp){
-        gBtn.addEventListener('click', async ()=>{
-          if (!gInp.files || !gInp.files.length) return;
-          const cur=loadGlobalFiles();
-          for(const f of gInp.files){ try{ const meta=await uploadToR2(f); cur.push(meta); }catch(e){ showError('Global upload failed: '+e.message); } }
-          saveGlobalFiles(cur);
-          renderFileList(document.getElementById('globalFilesList'), cur, 'global');
-          gInp.value='';
-        });
-      }
-
-      // Enter to run all
-      const ta=document.getElementById('prompt'); ta.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey){ e.preventDefault(); generateOutputs(); }});
-      document.getElementById('runAllBtn').addEventListener('click', generateOutputs);
-    });
-
-    // Number hotkeys 1..9 append card text
+    // number hotkeys to append 1..9 (don’t steal while typing in inputs)
     document.addEventListener('keydown', (e)=>{
       const ae=document.activeElement; const tag=(ae && ae.tagName||'').toLowerCase();
       const isOther = (tag==='input') || (tag==='textarea' && ae.id!=='prompt') || (ae && ae.isContentEditable);
       if (isOther || e.ctrlKey||e.metaKey||e.altKey) return;
       const k=e.key; if (k>='1'&&k<='9'){ e.preventDefault(); appendOutput(parseInt(k,10)-1); }
+      if (k==='Enter' && !e.shiftKey){ e.preventDefault(); generateOutputs(); }
     });
+
+    // init
+    window.addEventListener('DOMContentLoaded', ()=>{ initializeOutputCards(); updateApiKeyButton(); });
   </script>
-  <!-- ===================== END BLOCK J ============================================= -->
+  <!-- ===================== END BLOCK J: SCRIPT ===================================== -->
 </body>
 </html>
